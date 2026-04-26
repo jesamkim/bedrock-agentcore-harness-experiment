@@ -1,0 +1,30 @@
+# Local state
+.bedrock_agentcore.yaml
+dependencies.zip
+dependencies.hash
+*.log
+deploy-log.json
+invoke-results.json
+tool-results.json
+isolation-results.json
+observability-results.json
+cleanup-log.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# AWS credentials / env
+.env
+.env.*
+credentials
+credentials*
+aws_credentials*
+
+# Editor
+.vscode/
+.idea/
+.DS_Store
