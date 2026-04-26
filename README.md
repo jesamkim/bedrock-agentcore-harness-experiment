@@ -1,6 +1,6 @@
 # Bedrock AgentCore Harness 실험 — `@aws/agentcore` CLI v0.11.0 실측
 
-2026-04-22 AWS가 발표한 **Amazon Bedrock AgentCore Managed Harness** (프리뷰) + **AgentCore CLI** + **AgentCore Skills** 3종 세트를 직접 돌려보면서 남긴 재현 가능한 실험 노트입니다. 관련 [블로그 글](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)과 함께 보시면 됩니다.
+Amazon Bedrock AgentCore Managed Harness(프리뷰), AgentCore CLI, AgentCore Skills 3종 세트를 직접 돌려본 재현 가능한 실험 노트입니다.
 
 ---
 
@@ -17,7 +17,6 @@
 ```
 .
 ├── README.md                       # 이 파일
-├── results.md                      # 시나리오별 상세 결과
 ├── research-findings.md            # 초기 CLI 조사 (커맨드 맵)
 ├── scripts/                        # 시나리오 실행 스크립트 (00~99 순차 실행)
 │   ├── 00-env-check.sh             # 환경 검증
@@ -178,7 +177,6 @@ Strands는 기본값이며, CDK/Terraform IaC와 Bedrock/OpenAI/Anthropic/Gemini
 
 ## 관련 링크
 
-- 블로그: https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/
 - AWS 발표: https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/
 - AgentCore CLI (npm): https://www.npmjs.com/package/@aws/agentcore
 - AgentCore Starter Toolkit (Python): https://github.com/aws/bedrock-agentcore-starter-toolkit
