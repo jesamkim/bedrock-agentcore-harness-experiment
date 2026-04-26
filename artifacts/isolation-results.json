@@ -1,0 +1,117 @@
+{
+  "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+  "sessions": {
+    "A": {
+      "session_id": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204",
+      "my_number": 12345,
+      "other_number": 67890,
+      "first_invoke": {
+        "prompt": "Remember the number 12345. Acknowledge that you will remember it.",
+        "session_id": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204",
+        "started_at": "2026-04-26T01:58:29.705211+00:00",
+        "duration_seconds": 4.326764864847064,
+        "status_code": 200,
+        "request_id": "ed09c952-7de7-4580-9ebd-466021b6e0ea",
+        "x_amzn_headers": {
+          "x-amzn-requestid": "ed09c952-7de7-4580-9ebd-466021b6e0ea",
+          "x-amzn-bedrock-agentcore-runtime-session-id": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204"
+        },
+        "runtime_session_id_response": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204",
+        "response_body_raw": "{\"prompt\": \"Remember the number 12345. Acknowledge that you will remember it.\", \"response\": \"I acknowledge that I will remember the number 12345. I've noted it for this conversation.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:32.596151+00:00\", \"finished_at\": \"2026-04-26T01:58:34.020803+00:00\", \"duration_seconds\": 1.424652, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+        "response_body_parsed": {
+          "prompt": "Remember the number 12345. Acknowledge that you will remember it.",
+          "response": "I acknowledge that I will remember the number 12345. I've noted it for this conversation.",
+          "tool_uses": [],
+          "started_at": "2026-04-26T01:58:32.596151+00:00",
+          "finished_at": "2026-04-26T01:58:34.020803+00:00",
+          "duration_seconds": 1.424652,
+          "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      },
+      "second_invoke": {
+        "prompt": "What number did I just ask you to remember?",
+        "session_id": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204",
+        "started_at": "2026-04-26T01:58:34.031994+00:00",
+        "duration_seconds": 1.6541370749473572,
+        "status_code": 200,
+        "request_id": "8b03ffcd-33d3-4f99-aae2-d08da3398981",
+        "x_amzn_headers": {
+          "x-amzn-requestid": "8b03ffcd-33d3-4f99-aae2-d08da3398981",
+          "x-amzn-bedrock-agentcore-runtime-session-id": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204"
+        },
+        "runtime_session_id_response": "1ac84710dabd4fcab77e06af5b8112ebc2b5f204",
+        "response_body_raw": "{\"prompt\": \"What number did I just ask you to remember?\", \"response\": \"You asked me to remember the number 12345.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:34.107054+00:00\", \"finished_at\": \"2026-04-26T01:58:35.676486+00:00\", \"duration_seconds\": 1.569432, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+        "response_body_parsed": {
+          "prompt": "What number did I just ask you to remember?",
+          "response": "You asked me to remember the number 12345.",
+          "tool_uses": [],
+          "started_at": "2026-04-26T01:58:34.107054+00:00",
+          "finished_at": "2026-04-26T01:58:35.676486+00:00",
+          "duration_seconds": 1.569432,
+          "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      },
+      "mentions_own_number": true,
+      "leaked_other_session_number": false
+    },
+    "B": {
+      "session_id": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f",
+      "my_number": 67890,
+      "other_number": 12345,
+      "first_invoke": {
+        "prompt": "Remember the number 67890. Acknowledge that you will remember it.",
+        "session_id": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f",
+        "started_at": "2026-04-26T01:58:29.708096+00:00",
+        "duration_seconds": 4.703786103986204,
+        "status_code": 200,
+        "request_id": "f8ad33c4-9998-4af6-b08f-016bf310efa0",
+        "x_amzn_headers": {
+          "x-amzn-requestid": "f8ad33c4-9998-4af6-b08f-016bf310efa0",
+          "x-amzn-bedrock-agentcore-runtime-session-id": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f"
+        },
+        "runtime_session_id_response": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f",
+        "response_body_raw": "{\"prompt\": \"Remember the number 67890. Acknowledge that you will remember it.\", \"response\": \"I acknowledge that I will remember the number 67890. I have noted this number for our conversation.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:32.667800+00:00\", \"finished_at\": \"2026-04-26T01:58:34.400168+00:00\", \"duration_seconds\": 1.732368, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+        "response_body_parsed": {
+          "prompt": "Remember the number 67890. Acknowledge that you will remember it.",
+          "response": "I acknowledge that I will remember the number 67890. I have noted this number for our conversation.",
+          "tool_uses": [],
+          "started_at": "2026-04-26T01:58:32.667800+00:00",
+          "finished_at": "2026-04-26T01:58:34.400168+00:00",
+          "duration_seconds": 1.732368,
+          "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      },
+      "second_invoke": {
+        "prompt": "What number did I just ask you to remember?",
+        "session_id": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f",
+        "started_at": "2026-04-26T01:58:34.411902+00:00",
+        "duration_seconds": 1.3918967377394438,
+        "status_code": 200,
+        "request_id": "2bfd15aa-18d2-46b0-9cf5-d6fc12b37605",
+        "x_amzn_headers": {
+          "x-amzn-requestid": "2bfd15aa-18d2-46b0-9cf5-d6fc12b37605",
+          "x-amzn-bedrock-agentcore-runtime-session-id": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f"
+        },
+        "runtime_session_id_response": "c0c686f6033b4a5a922f9a77d0bf8f6d5361206f",
+        "response_body_raw": "{\"prompt\": \"What number did I just ask you to remember?\", \"response\": \"You asked me to remember the number 67890.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:34.502972+00:00\", \"finished_at\": \"2026-04-26T01:58:35.790127+00:00\", \"duration_seconds\": 1.287155, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+        "response_body_parsed": {
+          "prompt": "What number did I just ask you to remember?",
+          "response": "You asked me to remember the number 67890.",
+          "tool_uses": [],
+          "started_at": "2026-04-26T01:58:34.502972+00:00",
+          "finished_at": "2026-04-26T01:58:35.790127+00:00",
+          "duration_seconds": 1.287155,
+          "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+        }
+      },
+      "mentions_own_number": true,
+      "leaked_other_session_number": false
+    }
+  },
+  "distinct_session_ids": true,
+  "cross_contamination_detected": false,
+  "isolation_pass": true,
+  "sessions_metadata": {
+    "note": "no list_sessions-style method available on this boto3 client"
+  }
+}

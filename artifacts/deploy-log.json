@@ -1,0 +1,110 @@
+{
+  "agent_name": "harness_test_2fe9b30a",
+  "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+  "agent_id": "harness_test_2fe9b30a-AL9cs55yho",
+  "region": "us-west-2",
+  "account_id": "123456789012",
+  "execution_role": null,
+  "ecr_repository": null,
+  "s3_path": null,
+  "memory_id": null,
+  "deployment_mode": "direct_code_deploy",
+  "codebuild_id": null,
+  "ecr_uri": null,
+  "timings": {
+    "configure_seconds": 0.206689,
+    "launch_seconds": 27.451986,
+    "poll_seconds": 0.10064,
+    "total_seconds": 27.762593269348145
+  },
+  "configure_result": {
+    "config_path": "/Workshop/experiment/agentcore-harness/.bedrock_agentcore.yaml",
+    "dockerfile_path": null,
+    "dockerignore_path": null,
+    "runtime": null,
+    "runtime_type": "PYTHON_3_10",
+    "region": "us-west-2",
+    "account_id": "123456789012",
+    "execution_role": null,
+    "ecr_repository": null,
+    "auto_create_ecr": true,
+    "s3_path": null,
+    "auto_create_s3": false,
+    "memory_id": null,
+    "network_mode": "PUBLIC",
+    "network_subnets": null,
+    "network_security_groups": null,
+    "network_vpc_id": null
+  },
+  "launch_result": {
+    "mode": "direct_code_deploy",
+    "tag": null,
+    "env_vars": null,
+    "port": null,
+    "runtime": null,
+    "ecr_uri": null,
+    "agent_id": "harness_test_2fe9b30a-AL9cs55yho",
+    "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+    "codebuild_id": null,
+    "build_output": null
+  },
+  "poll_result": {
+    "final_status": "READY",
+    "attempts": 1,
+    "last_response": {
+      "ResponseMetadata": {
+        "RequestId": "564955c8-b114-486f-bead-a03fc9ad493b",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+          "date": "Sun, 26 Apr 2026 01:57:48 GMT",
+          "content-type": "application/json",
+          "content-length": "1082",
+          "connection": "keep-alive",
+          "x-amzn-requestid": "564955c8-b114-486f-bead-a03fc9ad493b",
+          "x-amz-apigw-id": "cZ6ckH_qvHcEM9g=",
+          "x-amzn-trace-id": "Root=1-69ed711c-340be2d844dc20425e777fc2"
+        },
+        "RetryAttempts": 0
+      },
+      "agentRuntimeArn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+      "agentRuntimeName": "harness_test_2fe9b30a",
+      "agentRuntimeId": "harness_test_2fe9b30a-AL9cs55yho",
+      "agentRuntimeVersion": "1",
+      "createdAt": "2026-04-26 01:57:33.403998+00:00",
+      "lastUpdatedAt": "2026-04-26 01:57:48.288288+00:00",
+      "roleArn": "arn:aws:iam::123456789012:role/AmazonBedrockAgentCoreSDKRuntime-us-west-2-5e82d0bbf1",
+      "networkConfiguration": {
+        "networkMode": "PUBLIC"
+      },
+      "status": "READY",
+      "lifecycleConfiguration": {
+        "idleRuntimeSessionTimeout": 900,
+        "maxLifetime": 28800
+      },
+      "workloadIdentityDetails": {
+        "workloadIdentityArn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:workload-identity-directory/default/workload-identity/harness_test_2fe9b30a-AL9cs55yho"
+      },
+      "agentRuntimeArtifact": {
+        "codeConfiguration": {
+          "code": {
+            "s3": {
+              "bucket": "bedrock-agentcore-codebuild-sources-123456789012-us-west-2",
+              "prefix": "harness_test_2fe9b30a/deployment.zip"
+            }
+          },
+          "runtime": "PYTHON_3_10",
+          "entryPoint": [
+            "main.py"
+          ]
+        }
+      },
+      "protocolConfiguration": {
+        "serverProtocol": "HTTP"
+      },
+      "metadataConfiguration": {
+        "requireMMDSV2": true
+      }
+    }
+  },
+  "final_status": "READY"
+}

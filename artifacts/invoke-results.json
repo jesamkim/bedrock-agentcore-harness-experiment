@@ -1,0 +1,65 @@
+{
+  "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+  "session_id": "39d34042577f4fe980b01bf858e0a9e24b9b49bb",
+  "cold": {
+    "label": "cold",
+    "session_id": "39d34042577f4fe980b01bf858e0a9e24b9b49bb",
+    "prompt": "What time is it right now? Also compute 17+25.",
+    "duration_seconds": 6.569748296402395,
+    "started_at": "2026-04-26T01:57:54.093419+00:00",
+    "finished_at": "2026-04-26T01:58:00.663168+00:00",
+    "status_code": 200,
+    "request_id": "cfbbcf2d-7c05-4cd6-8578-342afce9dd38",
+    "response_headers": {
+      "date": "Sun, 26 Apr 2026 01:58:00 GMT",
+      "content-type": "application/json",
+      "transfer-encoding": "chunked",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "cfbbcf2d-7c05-4cd6-8578-342afce9dd38",
+      "x-amzn-bedrock-agentcore-runtime-session-id": "39d34042577f4fe980b01bf858e0a9e24b9b49bb"
+    },
+    "response_body_raw": "{\"prompt\": \"What time is it right now? Also compute 17+25.\", \"response\": \"The current time is **2026-04-26T01:57:58.987633+00:00** (UTC).\\n\\nThe sum of 17 + 25 is **42**.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:57:57.103488+00:00\", \"finished_at\": \"2026-04-26T01:58:00.652218+00:00\", \"duration_seconds\": 3.54873, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+    "response_body_parsed": {
+      "prompt": "What time is it right now? Also compute 17+25.",
+      "response": "The current time is **2026-04-26T01:57:58.987633+00:00** (UTC).\n\nThe sum of 17 + 25 is **42**.",
+      "tool_uses": [],
+      "started_at": "2026-04-26T01:57:57.103488+00:00",
+      "finished_at": "2026-04-26T01:58:00.652218+00:00",
+      "duration_seconds": 3.54873,
+      "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    },
+    "contentType": "application/json",
+    "runtimeSessionId": "39d34042577f4fe980b01bf858e0a9e24b9b49bb"
+  },
+  "warm": {
+    "label": "warm",
+    "session_id": "39d34042577f4fe980b01bf858e0a9e24b9b49bb",
+    "prompt": "What time is it right now? Also compute 17+25.",
+    "duration_seconds": 3.2689902083948255,
+    "started_at": "2026-04-26T01:58:00.663330+00:00",
+    "finished_at": "2026-04-26T01:58:03.932323+00:00",
+    "status_code": 200,
+    "request_id": "36b189a9-548a-4ec6-ba53-46513e62ed6e",
+    "response_headers": {
+      "date": "Sun, 26 Apr 2026 01:58:03 GMT",
+      "content-type": "application/json",
+      "transfer-encoding": "chunked",
+      "connection": "keep-alive",
+      "x-amzn-requestid": "36b189a9-548a-4ec6-ba53-46513e62ed6e",
+      "x-amzn-bedrock-agentcore-runtime-session-id": "39d34042577f4fe980b01bf858e0a9e24b9b49bb"
+    },
+    "response_body_raw": "{\"prompt\": \"What time is it right now? Also compute 17+25.\", \"response\": \"The current time is **2026-04-26T01:58:02.479218+00:00** (UTC).\\n\\nThe sum of 17 + 25 is **42**.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:00.746369+00:00\", \"finished_at\": \"2026-04-26T01:58:03.919921+00:00\", \"duration_seconds\": 3.173552, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+    "response_body_parsed": {
+      "prompt": "What time is it right now? Also compute 17+25.",
+      "response": "The current time is **2026-04-26T01:58:02.479218+00:00** (UTC).\n\nThe sum of 17 + 25 is **42**.",
+      "tool_uses": [],
+      "started_at": "2026-04-26T01:58:00.746369+00:00",
+      "finished_at": "2026-04-26T01:58:03.919921+00:00",
+      "duration_seconds": 3.173552,
+      "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+    },
+    "contentType": "application/json",
+    "runtimeSessionId": "39d34042577f4fe980b01bf858e0a9e24b9b49bb"
+  },
+  "delta_seconds": 3.3007580880075693
+}

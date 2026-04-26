@@ -1,0 +1,517 @@
+{
+  "agent_id": "harness_test_2fe9b30a-AL9cs55yho",
+  "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+  "agent_name": "harness_test_2fe9b30a",
+  "region": "us-west-2",
+  "log_groups": [
+    {
+      "name": "/aws/bedrock-agentcore/runtimes/harness_test_2fe9b30a-AL9cs55yho-DEFAULT",
+      "creation_time": 1777168653870,
+      "retention": null
+    }
+  ],
+  "log_events_by_group": {
+    "/aws/bedrock-agentcore/runtimes/harness_test_2fe9b30a-AL9cs55yho-DEFAULT": {
+      "count": 48,
+      "events": [
+        {
+          "timestamp": 1777168676795,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:botocore.credentials:Found credentials from IAM Role: execution_role"
+        },
+        {
+          "timestamp": 1777168677101,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "WARNING:  Invalid HTTP request received."
+        },
+        {
+          "timestamp": 1777168677103,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:harness_test:Invoking agent with prompt: What time is it right now? Also compute 17+25."
+        },
+        {
+          "timestamp": 1777168677104,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:strands.telemetry.metrics:Creating Strands MetricsClient"
+        },
+        {
+          "timestamp": 1777168678327,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "Tool #1: get_current_time"
+        },
+        {
+          "timestamp": 1777168678503,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "Tool #2: add_numbers"
+        },
+        {
+          "timestamp": 1777168680316,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "The current time is **2026-04-26T01:57:58.987633+00:00** (UTC)."
+        },
+        {
+          "timestamp": 1777168680652,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:00.652Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (3.549s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"9971467b-7ab5-4e00-8146-1f9a10cb2dba\", \"sessionId\": \"39d34042577f4fe980b01bf858e0a9e24b9b49bb\"}"
+        },
+        {
+          "timestamp": 1777168680652,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (3.549s)"
+        },
+        {
+          "timestamp": 1777168680746,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:harness_test:Invoking agent with prompt: What time is it right now? Also compute 17+25."
+        },
+        {
+          "timestamp": 1777168681825,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "The sum of 17 + 25 is **42**."
+        },
+        {
+          "timestamp": 1777168681826,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "Tool #3: get_current_time"
+        },
+        {
+          "timestamp": 1777168681979,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "Tool #4: add_numbers"
+        },
+        {
+          "timestamp": 1777168683687,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "The current time is **2026-04-26T01:58:02.479218+00:00** (UTC)."
+        },
+        {
+          "timestamp": 1777168683920,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:03.920Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (3.174s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"31952213-fff6-4657-b3b4-fa2edde017a3\", \"sessionId\": \"39d34042577f4fe980b01bf858e0a9e24b9b49bb\"}"
+        },
+        {
+          "timestamp": 1777168683920,
+          "logStreamName": "2026/04/26/[runtime-logs-39d34042577f4fe980b01bf858e0a9e24b9b49bb]e4837b89-c926-4802-b413-ab95338bc4a3",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (3.174s)"
+        },
+        {
+          "timestamp": 1777168689728,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "INFO:botocore.credentials:Found credentials from IAM Role: execution_role"
+        },
+        {
+          "timestamp": 1777168690423,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "WARNING:  Invalid HTTP request received."
+        },
+        {
+          "timestamp": 1777168690425,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "INFO:harness_test:Invoking agent with prompt: What is 888 plus 1234?"
+        },
+        {
+          "timestamp": 1777168690426,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "INFO:strands.telemetry.metrics:Creating Strands MetricsClient"
+        },
+        {
+          "timestamp": 1777168691502,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "Tool #1: add_numbers"
+        },
+        {
+          "timestamp": 1777168694394,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:14.394Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (3.969s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"f92f18fe-0148-4592-928f-32a8b2183e7a\", \"sessionId\": \"40a9048c81794811ad6d291c19746722f271c2d4\"}"
+        },
+        {
+          "timestamp": 1777168694394,
+          "logStreamName": "2026/04/26/[runtime-logs-40a9048c81794811ad6d291c19746722f271c2d4]00a0996d-983a-4423-8e3d-5e040db512c6",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (3.969s)"
+        },
+        {
+          "timestamp": 1777168697230,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "INFO:botocore.credentials:Found credentials from IAM Role: execution_role"
+        },
+        {
+          "timestamp": 1777168697841,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "WARNING:  Invalid HTTP request received."
+        },
+        {
+          "timestamp": 1777168697843,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "INFO:harness_test:Invoking agent with prompt: What time is it?"
+        },
+        {
+          "timestamp": 1777168697844,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "INFO:strands.telemetry.metrics:Creating Strands MetricsClient"
+        },
+        {
+          "timestamp": 1777168698949,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "Tool #1: get_current_time"
+        },
+        {
+          "timestamp": 1777168700762,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:20.762Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (2.919s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"1e062414-cbc8-424b-8d87-d56f9fc77637\", \"sessionId\": \"1d7323bc855143d0934bf854090f837c4c237ce2\"}"
+        },
+        {
+          "timestamp": 1777168700762,
+          "logStreamName": "2026/04/26/[runtime-logs-1d7323bc855143d0934bf854090f837c4c237ce2]6193ab5f-7be4-4f2c-b21c-a4af203cc937",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (2.919s)"
+        },
+        {
+          "timestamp": 1777168712276,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:botocore.credentials:Found credentials from IAM Role: execution_role"
+        },
+        {
+          "timestamp": 1777168712372,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:botocore.credentials:Found credentials from IAM Role: execution_role"
+        },
+        {
+          "timestamp": 1777168712594,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "WARNING:  Invalid HTTP request received."
+        },
+        {
+          "timestamp": 1777168712596,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:harness_test:Invoking agent with prompt: Remember the number 12345. Acknowledge that you will remember it."
+        },
+        {
+          "timestamp": 1777168712596,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:strands.telemetry.metrics:Creating Strands MetricsClient"
+        },
+        {
+          "timestamp": 1777168712665,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "WARNING:  Invalid HTTP request received."
+        },
+        {
+          "timestamp": 1777168712667,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:harness_test:Invoking agent with prompt: Remember the number 67890. Acknowledge that you will remember it."
+        },
+        {
+          "timestamp": 1777168712668,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:strands.telemetry.metrics:Creating Strands MetricsClient"
+        },
+        {
+          "timestamp": 1777168714021,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:34.021Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (1.425s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"d825aa1f-e826-4b1e-9c77-6b65273211c6\", \"sessionId\": \"1ac84710dabd4fcab77e06af5b8112ebc2b5f204\"}"
+        },
+        {
+          "timestamp": 1777168714021,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (1.425s)"
+        },
+        {
+          "timestamp": 1777168714107,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:harness_test:Invoking agent with prompt: What number did I just ask you to remember?"
+        },
+        {
+          "timestamp": 1777168714400,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:34.400Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (1.733s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"289065dd-740e-4a41-9f18-e0d550afec89\", \"sessionId\": \"c0c686f6033b4a5a922f9a77d0bf8f6d5361206f\"}"
+        },
+        {
+          "timestamp": 1777168714400,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (1.733s)"
+        },
+        {
+          "timestamp": 1777168714503,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:harness_test:Invoking agent with prompt: What number did I just ask you to remember?"
+        },
+        {
+          "timestamp": 1777168715676,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:35.676Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (1.570s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"21753d50-f87c-4b37-9adc-c1bb8be573ba\", \"sessionId\": \"1ac84710dabd4fcab77e06af5b8112ebc2b5f204\"}"
+        },
+        {
+          "timestamp": 1777168715676,
+          "logStreamName": "2026/04/26/[runtime-logs-1ac84710dabd4fcab77e06af5b8112ebc2b5f204]3db3ff92-a4f3-4567-a6bd-44ba4b4b224f",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (1.570s)"
+        },
+        {
+          "timestamp": 1777168715790,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "{\"timestamp\": \"2026-04-26T01:58:35.790Z\", \"level\": \"INFO\", \"message\": \"Invocation completed successfully (1.288s)\", \"logger\": \"bedrock_agentcore.app\", \"requestId\": \"c9f3cfeb-fab8-45da-8700-16a61ab0595c\", \"sessionId\": \"c0c686f6033b4a5a922f9a77d0bf8f6d5361206f\"}"
+        },
+        {
+          "timestamp": 1777168715790,
+          "logStreamName": "2026/04/26/[runtime-logs-c0c686f6033b4a5a922f9a77d0bf8f6d5361206f]d734d7c3-d5b2-4e94-a417-0ce204099ebc",
+          "message": "INFO:bedrock_agentcore.app:Invocation completed successfully (1.288s)"
+        }
+      ]
+    }
+  },
+  "namespace_probes": {
+    "AWS/BedrockAgentCore": {
+      "total_in_namespace": 0,
+      "relevant_to_agent": []
+    },
+    "AWS/Bedrock-AgentCore": {
+      "total_in_namespace": 17,
+      "relevant_to_agent": [
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Latency",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "SystemErrors",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "UserErrors",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Throttles",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Sessions",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Invocations",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Errors",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        },
+        {
+          "Namespace": "AWS/Bedrock-AgentCore",
+          "MetricName": "Duration",
+          "Dimensions": [
+            {
+              "Name": "Resource",
+              "Value": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho"
+            },
+            {
+              "Name": "Operation",
+              "Value": "InvokeAgentRuntime"
+            },
+            {
+              "Name": "Name",
+              "Value": "harness_test_2fe9b30a::DEFAULT"
+            }
+          ]
+        }
+      ]
+    },
+    "AWS/Bedrock/AgentCore": {
+      "total_in_namespace": 0,
+      "relevant_to_agent": []
+    },
+    "bedrock-agentcore": {
+      "total_in_namespace": 0,
+      "relevant_to_agent": []
+    }
+  },
+  "metric_stats": {
+    "AWS/BedrockAgentCore": {
+      "Invocations": {
+        "label": "Invocations",
+        "datapoints": []
+      },
+      "Errors": {
+        "label": "Errors",
+        "datapoints": []
+      },
+      "Latency": {
+        "label": "Latency",
+        "datapoints": []
+      },
+      "InvocationLatency": {
+        "label": "InvocationLatency",
+        "datapoints": []
+      },
+      "SessionCount": {
+        "label": "SessionCount",
+        "datapoints": []
+      }
+    },
+    "AWS/Bedrock-AgentCore": {
+      "Invocations": {
+        "label": "Invocations",
+        "datapoints": []
+      },
+      "Errors": {
+        "label": "Errors",
+        "datapoints": []
+      },
+      "Latency": {
+        "label": "Latency",
+        "datapoints": []
+      },
+      "InvocationLatency": {
+        "label": "InvocationLatency",
+        "datapoints": []
+      },
+      "SessionCount": {
+        "label": "SessionCount",
+        "datapoints": []
+      }
+    },
+    "AWS/Bedrock/AgentCore": {
+      "Invocations": {
+        "label": "Invocations",
+        "datapoints": []
+      },
+      "Errors": {
+        "label": "Errors",
+        "datapoints": []
+      },
+      "Latency": {
+        "label": "Latency",
+        "datapoints": []
+      },
+      "InvocationLatency": {
+        "label": "InvocationLatency",
+        "datapoints": []
+      },
+      "SessionCount": {
+        "label": "SessionCount",
+        "datapoints": []
+      }
+    },
+    "bedrock-agentcore": {
+      "Invocations": {
+        "label": "Invocations",
+        "datapoints": []
+      },
+      "Errors": {
+        "label": "Errors",
+        "datapoints": []
+      },
+      "Latency": {
+        "label": "Latency",
+        "datapoints": []
+      },
+      "InvocationLatency": {
+        "label": "InvocationLatency",
+        "datapoints": []
+      },
+      "SessionCount": {
+        "label": "SessionCount",
+        "datapoints": []
+      }
+    }
+  },
+  "window": {
+    "start": "2026-04-26T00:58:42.587123+00:00",
+    "end": "2026-04-26T01:58:42.587123+00:00"
+  }
+}

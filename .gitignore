@@ -1,14 +1,16 @@
-# Local state
+# Local state (runtime-generated)
 .bedrock_agentcore.yaml
 dependencies.zip
 dependencies.hash
 *.log
-deploy-log.json
-invoke-results.json
-tool-results.json
-isolation-results.json
-observability-results.json
-cleanup-log.json
+
+# Runtime outputs at project root (sanitized copies live in artifacts/)
+/deploy-log.json
+/invoke-results.json
+/tool-results.json
+/isolation-results.json
+/observability-results.json
+/cleanup-log.json
 
 # Python
 __pycache__/

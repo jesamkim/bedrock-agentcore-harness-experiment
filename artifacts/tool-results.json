@@ -1,0 +1,63 @@
+{
+  "agent_arn": "arn:aws:bedrock-agentcore:us-west-2:123456789012:runtime/harness_test_2fe9b30a-AL9cs55yho",
+  "sum_test": {
+    "invoke": {
+      "prompt": "What is 888 plus 1234?",
+      "session_id": "40a9048c81794811ad6d291c19746722f271c2d4",
+      "started_at": "2026-04-26T01:58:06.935783+00:00",
+      "duration_seconds": 7.469886968843639,
+      "status_code": 200,
+      "request_id": "b23ea8ff-bf66-4f65-8bc5-c2969ce4a86e",
+      "response_body_raw": "{\"prompt\": \"What is 888 plus 1234?\", \"response\": \"The sum of 888 plus 1234 is **2122**.\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:10.425526+00:00\", \"finished_at\": \"2026-04-26T01:58:14.393697+00:00\", \"duration_seconds\": 3.968171, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+      "response_body_parsed": {
+        "prompt": "What is 888 plus 1234?",
+        "response": "The sum of 888 plus 1234 is **2122**.",
+        "tool_uses": [],
+        "started_at": "2026-04-26T01:58:10.425526+00:00",
+        "finished_at": "2026-04-26T01:58:14.393697+00:00",
+        "duration_seconds": 3.968171,
+        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      }
+    },
+    "verification": {
+      "expected": 2122,
+      "numbers_found_in_response": [
+        888,
+        1234,
+        2122
+      ],
+      "tool_names_reported": [],
+      "contains_expected": true,
+      "add_numbers_called": false,
+      "pass": true
+    }
+  },
+  "time_test": {
+    "invoke": {
+      "prompt": "What time is it?",
+      "session_id": "1d7323bc855143d0934bf854090f837c4c237ce2",
+      "started_at": "2026-04-26T01:58:14.405956+00:00",
+      "duration_seconds": 6.367376626469195,
+      "status_code": 200,
+      "request_id": "f736e9dc-7056-46bc-aad5-09ec4969c5a0",
+      "response_body_raw": "{\"prompt\": \"What time is it?\", \"response\": \"The current time is **2026-04-26 01:58:19 UTC** (ISO 8601 format).\", \"tool_uses\": [], \"started_at\": \"2026-04-26T01:58:17.843738+00:00\", \"finished_at\": \"2026-04-26T01:58:20.762172+00:00\", \"duration_seconds\": 2.918434, \"model\": \"us.anthropic.claude-sonnet-4-5-20250929-v1:0\"}",
+      "response_body_parsed": {
+        "prompt": "What time is it?",
+        "response": "The current time is **2026-04-26 01:58:19 UTC** (ISO 8601 format).",
+        "tool_uses": [],
+        "started_at": "2026-04-26T01:58:17.843738+00:00",
+        "finished_at": "2026-04-26T01:58:20.762172+00:00",
+        "duration_seconds": 2.918434,
+        "model": "us.anthropic.claude-sonnet-4-5-20250929-v1:0"
+      }
+    },
+    "verification": {
+      "iso_timestamp_found": false,
+      "iso_match": null,
+      "tool_names_reported": [],
+      "get_current_time_called": false,
+      "pass": false
+    }
+  },
+  "overall_pass": false
+}
