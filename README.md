@@ -1,8 +1,20 @@
-# Bedrock AgentCore Managed Harness 실험 (Preview, 2026-04)
+# Bedrock AgentCore Harness 실험 (Preview, 2026-04)
+
+> ⚠️ **작업 중 (Work in Progress)** — 2026-04-26
+>
+> **이 레포의 현재 실험은 블로그의 검증 대상을 벗어났습니다.**
+>
+> 블로그는 2026-04-22 **프리뷰로 공개된 Managed Harness** (`agentcore create/dev/deploy` CLI, `harness.json` 선언형 스키마)를 다룹니다. 하지만 이 레포에 현재 포함된 코드는 그 아래 레이어인 **기존 AgentCore Runtime (2025-10-13 GA) + Strands Agents** 조합을 `bedrock-agentcore-starter-toolkit`으로 직접 배포한 실험입니다. 두 레이어는 추상화 수준이 다릅니다.
+>
+> 실측 자료(27.8초 배포, microVM 격리, Observability 네임스페이스 등)는 Runtime 레이어에 대해서는 그대로 유효하므로 참고용으로 남겨둡니다. **Managed Harness 자체를 타깃팅한 실험은 재실행 예정이며, 결과가 나오는 대로 이 레포의 내용을 교체합니다.**
+>
+> 블로그: https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/
+
+---
 
 <div align="center">
 
-**AWS Bedrock AgentCore Runtime + Strands Agents 실전 검증 하네스**
+**AWS Bedrock AgentCore Runtime + Strands Agents 실전 검증 하네스** *(현재 버전)*
 
 `direct_code_deploy` 27.8초 배포 · 세션 격리 행동 검증 · CloudWatch Observability 자동 수집 실측
 
@@ -12,17 +24,28 @@
 
 ## 이 레포는 무엇인가
 
-2026년 4월 22일 AWS가 발표한 [Bedrock AgentCore Managed Harness (Preview)](https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/)를 분석한 블로그 글의 **주장을 실측으로 교차 검증**하기 위해 만든 실험 하네스입니다.
+2026년 4월 22일 AWS가 발표한 [Bedrock AgentCore Managed Harness (Preview)](https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/)를 분석한 블로그 글을 실측으로 뒷받침하기 위해 만들었습니다.
 
-Managed Harness 자체(`agentcore create/dev/deploy` CLI 플로우, `harness.json` 스키마)는 아직 프리뷰라 재현이 제한적이므로, 이 실험은 그 아래 깔린 **AgentCore Runtime (2025-10-13 GA) + Strands Agents** 조합을 직접 배포·호출·정리하면서 다음 7개 주장을 점검합니다.
+단, 앞의 경고 박스에서 밝힌 대로 **현재 포함된 코드는 Managed Harness CLI가 아니라 그 아래 AgentCore Runtime + Strands 조합을 직접 다루는 실험**입니다. 추상화 레이어가 다르므로, 아래 표의 판정은 "Runtime 레이어에서 관찰된 사실"로 읽어야 합니다. Managed Harness 자체에 대한 재검증이 완료되면 이 표와 코드가 교체됩니다.
 
-1. **3-선언 배포** (model + systemPrompt + tools) → **부분 사실** (Strands `Agent()` 생성자 한정)
-2. **세션 격리 microVM** → **사실** (행동 수준 검증)
-3. **Firecracker 사용** → **미확인** (공식 문서/응답 헤더에 힌트 없음)
-4. **Strands가 내부 엔진** → **거짓** (프레임워크 중립, LangGraph/CrewAI 등 1급 지원)
-5. **프리뷰 기능** → **거짓** (AgentCore Runtime은 2025-10-13 GA, 9개 리전 지원)
-6. **관측성 내장** → **사실** (네임스페이스 `AWS/Bedrock-AgentCore`, 메트릭 8종 자동 수집)
-7. **툴 호출 동작** → **사실** (42, 2122 계산 확인 / 단, Strands 1.29 `tool_uses` 메타데이터 빈 값 이슈)
+### Runtime 레이어에서 관찰된 사실 (현재 실험)
+
+| 블로그 주장 | Runtime 레이어 관찰 결과 |
+|---|---|
+| microVM 세션 격리 | **사실** (두 세션 간 비밀 값 교차 오염 없음) |
+| Firecracker 사용 | **미확인** (AWS devguide는 "microVM"만 명시, hypervisor 종류 비공개) |
+| Strands가 기본 엔진 | **확인됨** (Managed Harness 컨텍스트 밖이지만, Runtime에서도 Strands는 기본 템플릿) |
+| 관측성 내장 | **사실** (네임스페이스 `AWS/Bedrock-AgentCore`, 메트릭 8종 자동 수집) |
+| 툴 호출 동작 | **사실** (42, 2122 계산 확인 / 단, Strands 1.29 `tool_uses` 메타데이터 빈 값 이슈) |
+
+### Managed Harness 자체에 대해 이 실험이 **검증하지 못한 것**
+
+- `agentcore create` 템플릿에서 `model`, `systemPrompt`, `tools` 3개 선언만으로 배포가 되는가
+- `harness.json` 스키마와 `agentcore dev` 로컬 개발 루프의 동작
+- Managed Harness 전용 내장 도구(`agentcore_browser`, `agentcore_gateway`, `remote_mcp_server`, Code Interpreter) 바인딩
+- Skills 메커니즘과 Managed Harness의 결합
+
+이 항목들은 재실험 대상입니다.
 
 전체 검증 결과와 블로그 수정 제안은 [`blog-corrections.md`](./blog-corrections.md), [`results.md`](./results.md), [`research-findings.md`](./research-findings.md) 참조.
 
