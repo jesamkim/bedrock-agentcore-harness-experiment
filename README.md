@@ -1,42 +1,23 @@
 # Bedrock AgentCore Harness 실험 — `@aws/agentcore` CLI v0.11.0 실측
 
-> 2026-04-22 AWS가 발표한 **Amazon Bedrock AgentCore Managed Harness** (프리뷰) + **AgentCore CLI** + **AgentCore Skills** 3종 세트에 대한 [블로그 글](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)의 실측 검증 레포입니다.
+2026-04-22 AWS가 발표한 **Amazon Bedrock AgentCore Managed Harness** (프리뷰) + **AgentCore CLI** + **AgentCore Skills** 3종 세트를 직접 돌려보면서 남긴 재현 가능한 실험 노트입니다. 관련 [블로그 글](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)과 함께 보시면 됩니다.
 
 ---
 
 ## TL;DR
 
-- **대상**: `@aws/agentcore` v0.11.0 (실제로는 `bedrock-agentcore-starter-toolkit` Python CLI의 npm 래퍼)
+- **대상**: `@aws/agentcore` v0.11.0 (실제 런너는 `bedrock-agentcore-starter-toolkit` Python CLI, npm 패키지는 이를 래핑)
 - **배포 실측**: **32초** (HelloAgent 기본 템플릿, `direct_code_deploy`, us-west-2)
 - **세션 격리**: 서로 다른 `sessionId` 간 코드워드 교차 오염 없음, CloudWatch log stream도 세션별 분리
 - **관측성**: 메트릭 네임스페이스 `AWS/Bedrock-AgentCore`, log group `/aws/bedrock-agentcore/runtimes/<ID>-DEFAULT` 기본 생성, OTel 자동 wrap
 - **정리**: `agentcore destroy --force`로 Runtime + S3 artifacts + IAM role 일관 삭제
-
-## 블로그 7개 주장 판정
-
-| # | 주장 | 판정 | 근거 |
-|---|---|---|---|
-| 1 | `harness.json` 3-선언 구조 (model + systemPrompt + tools) | **부분 거짓** — 실제 CLI는 Python `main.py` + `.bedrock_agentcore.yaml` 조합 | [results.md](results.md) |
-| 2 | microVM 세션 격리 | **사실** | [artifacts/04-session-isolation.log](artifacts/04-session-isolation.log) |
-| 3 | 내장 도구 바인딩 (Browser/Code Interpreter/Gateway/MCP) | **사실** (Python `tools=[]`로 바인딩) | [example-agent/src/main.py](example-agent/src/main.py) |
-| 4 | Skills 통합 (Kiro/Claude Code/Codex/Cursor) | **미확인** (CLI 범위 밖, IDE 플러그인 영역) | — |
-| 5 | 관측성 (`AWS/Bedrock-AgentCore` 네임스페이스) | **사실** | [artifacts/05-observability.log](artifacts/05-observability.log) |
-| 6 | Strands Agents가 엔진 | **부분 거짓** — Strands는 **기본값**이고 CLI는 6개 framework 지원 (LangChain/LangGraph, Google ADK, OpenAI Agents, AutoGen, CrewAI 포함) | [artifacts/cli-help-full.txt](artifacts/cli-help-full.txt) |
-| 7 | 수 분 내 배포 | **사실** — 32초 실측 | [artifacts/03-deploy.log](artifacts/03-deploy.log) |
-
-### 추가 발견
-
-- **Terraform IaC 이미 지원**: `agentcore create --iac [CDK|Terraform]`. 블로그는 "Terraform 이어서 제공 예정"이라고 서술 → **거짓**.
-- **Anthropic 직접 API 지원**: `--model-provider [Bedrock|OpenAI|Anthropic|Gemini]`. 블로그는 "Bedrock/OpenAI/Gemini 세 곳"이라고 서술 → Anthropic 누락.
-- **HelloAgent 템플릿 기본 모델은 Claude Sonnet 4.5** (`global.anthropic.claude-sonnet-4-5-20250929-v1:0`). 블로그가 말한 Sonnet 4.6과 다름.
 
 ## 레포 구조
 
 ```
 .
 ├── README.md                       # 이 파일
-├── results.md                      # 7개 주장별 판정 및 증거
-├── blog-corrections.md             # 블로그 수정 제안 (카테고리 A/B/C)
+├── results.md                      # 시나리오별 상세 결과
 ├── research-findings.md            # 초기 CLI 조사 (커맨드 맵)
 ├── scripts/                        # 시나리오 실행 스크립트 (00~99 순차 실행)
 │   ├── 00-env-check.sh             # 환경 검증
@@ -116,7 +97,7 @@ bash scripts/99-cleanup.sh             # <-- 반드시 실행 (비용 누수 방
 
 ## 핵심 관찰
 
-### 1. 실제 프로젝트 구조는 `harness.json`이 아니라 Strands 코드 + YAML 설정
+### 1. 프로젝트 구조 — Strands 코드 + YAML 설정
 
 `agentcore create` 결과:
 
@@ -162,7 +143,7 @@ async def invoke(payload, context):
                 yield event["data"]
 ```
 
-개념적으로는 여전히 `model + systemPrompt + tools`로 에이전트가 정의되지만, 표현 매체는 JSON이 아니라 Python + Strands.
+에이전트는 `model + system_prompt + tools` 세 축으로 정의되며, 표현 매체는 Python + Strands 런타임입니다.
 
 ### 2. 세션 격리 + 관측성 검증
 
@@ -185,9 +166,15 @@ agentcore create
   --template         [basic|production]
 ```
 
+Strands는 기본값이며, CDK/Terraform IaC와 Bedrock/OpenAI/Anthropic/Gemini 모델 provider가 선택지로 제공됩니다.
+
+### 4. HelloAgent 기본 모델
+
+기본 템플릿이 생성하는 `src/model/load.py`는 `global.anthropic.claude-sonnet-4-5-20250929-v1:0` (Claude Sonnet 4.5)를 참조합니다.
+
 ## legacy-runtime-experiment (참고용)
 
-이 디렉토리에는 이전 실험(AgentCore Runtime 레이어 + Strands 직접 호출) 코드와 결과가 보존되어 있습니다. 블로그가 다루는 Managed Harness CLI 레이어와는 추상화 수준이 다르므로, **현재 실험과 혼동하지 않도록** 별도 디렉토리로 분리했습니다.
+이 디렉토리에는 이전 실험(AgentCore Runtime 레이어 + Strands 직접 호출) 코드와 결과가 보존되어 있습니다. 이번 CLI 실험과는 추상화 수준이 다르므로 별도 디렉토리로 분리했습니다.
 
 ## 관련 링크
 
