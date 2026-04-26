@@ -1,259 +1,220 @@
-# Research Findings — AgentCore "Managed Harness" Verification
+# AgentCore CLI 리서치 보고서
 
-Phase 1 of 3 (Research). Prepared for the Implementer subagent.
-
----
-
-## 1. What "Managed Harness" Actually Is
-
-**Verdict: BLOG INVENTION / marketing shorthand. Not an AWS product name.**
-
-- Searched: AWS product pages, devguide, FAQs, AWS What's New, GA announcement blog, starter-toolkit README, SDK README, npm `@aws/agentcore`, What's New Oct 2025 post. The phrase "Managed Harness" does **not appear** in any AWS source.
-- The AWS-official term for the managed agent-hosting service is **"Amazon Bedrock AgentCore Runtime"** (part of Amazon Bedrock AgentCore).
-- What the blog calls a "Managed Harness" most closely maps to the combination of:
-  1. `BedrockAgentCoreApp` (a Starlette-based HTTP wrapper) — source: `bedrock_agentcore/runtime/app.py`.
-  2. The `agentcore` CLI (`bedrock-agentcore-starter-toolkit`) that configures, packages, and deploys the app.
-  3. AgentCore Runtime (the managed AWS service that runs the deployed artifact in session-isolated microVMs).
-- The 3-field pattern (`model`, `system_prompt`, `tools`) the blog calls a "Managed Harness API" is actually the **Strands Agents `Agent()` constructor** — not an AgentCore API. The developer writes this inside the entrypoint function; AgentCore just hosts the process.
-
-Source (Strands `Agent(...)` used in the default template):
-`/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore_starter_toolkit/create/features/strands/templates/runtime_only/common/main.py.j2`
+출처:
+- `/usr/lib/node_modules/@aws/agentcore/README.md` (npm 패키지 v0.11.0)
+- `/usr/lib/node_modules/@aws/agentcore/package.json`
+- `/usr/lib/node_modules/@aws/agentcore/dist/assets/README.md` (`agentcore create` 템플릿 원본 README)
+- `/usr/lib/node_modules/@aws/agentcore/dist/assets/agents/AGENTS.md`
+- `/usr/lib/node_modules/@aws/agentcore/dist/schema/schemas/agentcore-project.d.ts` (Zod 스키마 타입 선언)
+- `<REPO>/artifacts/cli-help-full.txt` (370 lines, 13개 주요 커맨드)
 
 ---
 
-## 2. Minimal Deploy Recipe
+## 1. CLI 커맨드 완전 맵
 
-There is **no 3-field shortcut API** on AgentCore itself. Two supported deploy paths:
+### 프로젝트 라이프사이클
+- `agentcore create` - 프로젝트 생성 (+ `create import`: Bedrock Agent 임포트)
+- `agentcore dev` - 로컬 개발 서버(기본 :8080, hot reload)
+- `agentcore deploy` - 3가지 모드: default(cloud), `--local`, `--local-build`
+- `agentcore invoke` - `--local` / `--dev` / cloud 모두 지원
+- `agentcore status` - 배포 상태
+- `agentcore destroy` - 리소스 삭제
 
-### Path A — Starter Toolkit (the "easy" path the blog probably means)
+### 리소스 관리 (README에 있으나 help에는 직접 노출 안 됨)
+- `agentcore add` / `agentcore remove` - agents, memory, credentials, evaluators, targets, policy
+- `agentcore import` - 기존 Bedrock Agent 가져오기
 
-```bash
-pip install bedrock-agentcore strands-agents bedrock-agentcore-starter-toolkit
+### 서브커맨드 그룹
+- `agentcore gateway` - 9개 서브(create-mcp-gateway, list-mcp-gateways, update-gateway 등)
+- `agentcore memory` - 5개 서브(create/get/list/delete/status)
+- `agentcore eval` - 3개(run, evaluator, online)
+- `agentcore identity` - 9개(Cognito, AWS JWT, credential-provider, workload-identity)
+- `agentcore policy` - Cedar 기반(14개 서브, policy-engine/policy/policy-generation)
+- `agentcore configure` - 광범위한 플래그(vpc/subnets/security-groups/authorizer-config/disable-otel/disable-memory 등)
+- `agentcore obs` - **`show`, `list` 두 개뿐** (block-level trace 시각화용)
 
-# 1. Write entrypoint (see section 3)
-# 2. Configure
-agentcore configure -e my_agent.py --disable-memory
-# 3. Deploy (default now uses CodeBuild + direct_code_deploy or container)
-agentcore deploy
-# 4. Invoke
-agentcore invoke '{"prompt": "Hello"}'
-# 5. Destroy
-agentcore destroy
+### 유틸리티 (README 기준)
+- `agentcore logs`, `agentcore traces list/get`, `agentcore validate`, `agentcore package`, `agentcore fetch access`, `agentcore update`
+- README는 `logs`/`traces`를 별도 최상위 커맨드로 광고하지만 CLI v0.11.0 런타임 help에서는 `obs` 하위 `show/list`로만 보임 -> 문서와 실제 바이너리 간 불일치 가능성
+
+---
+
+## 2. `agentcore create` 템플릿 동작
+
+### basic vs production
+- `--template basic`: runtime 코드만 (기본값)
+- `--template production`: MCP setup + IaC 포함
+
+### 기본값
+- `--agent-framework Strands` (기본, 필수 아님 — CrewAI/LangChain_LangGraph/GoogleADK/OpenAIAgents/AutoGen 선택 가능)
+- `--model-provider Bedrock` (기본)
+- `--iac CDK` (기본, Terraform 선택 가능)
+- `--venv` (자동 venv + 의존성 설치)
+
+### 생성되는 프로젝트 구조 (`assets/README.md` 기준)
+```
+my-project/
+├── AGENTS.md
+├── agentcore/
+│   ├── agentcore.json
+│   ├── aws-targets.json
+│   ├── .env.local                (gitignored)
+│   ├── .llm-context/             (TypeScript 타입 정의)
+│   │   ├── agentcore.ts
+│   │   ├── aws-targets.ts
+│   │   └── mcp.ts
+│   └── cdk/                      (@aws/agentcore-cdk L3 constructs)
+├── app/                          (agent code)
+└── evaluators/                   (optional)
 ```
 
-Source: https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html  
-CLI source: `/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py`
+### 사용 가능한 프레임워크 템플릿 조합
+- HTTP 프로토콜: strands, langchain_langgraph, googleadk, openaiagents, autogen
+- MCP 프로토콜: standalone만
+- A2A 프로토콜: strands, langchain_langgraph, googleadk
+- AGUI 프로토콜: strands, langchain_langgraph, googleadk
 
-### Path B — Raw boto3 (what the toolkit actually calls under the hood)
+즉 **HTTP 서버는 5개 프레임워크 지원, MCP는 프레임워크 불특정(standalone)**.
 
-```python
-import boto3
-control = boto3.client('bedrock-agentcore-control')
-response = control.create_agent_runtime(
-    name='my-agent',
-    agentRuntimeArtifact={'s3': {'uri': 's3://bucket/package.zip'}},
-    roleArn='arn:aws:iam::ACCT:role/AgentCoreExecutionRole',
-    pythonRuntime='PYTHON_3_13',
-    entryPoint=['main.py']
-)
+---
+
+## 3. `agentcore.json` 스키마 (Zod 기반)
+
+### 최상위 스키마: `AgentCoreProjectSpecSchema`
+**필수 필드** (명시적):
+- `name` (ZodString)
+- `version` (ZodNumber)
+
+**기본값 있음 (`ZodDefault`)**:
+- `managedBy`: "CDK"
+- `runtimes`: `[]`
+- `memories`: `[]`
+- `credentials`: `[]`
+- `evaluators`: `[]`
+- `onlineEvalConfigs`: `[]`
+- `agentCoreGateways`: `[]`
+
+**선택 필드**:
+- `$schema`, `tags`
+
+따라서 **최소 유효 JSON은**:
+```json
+{"name": "my-project", "version": 1}
 ```
+블로그 "3개 선언만으로" 주장은 **name/version만 강제이므로 엄밀히 2개**. 하지만 실제 쓸모 있으려면 runtimes 배열에 최소 1개가 필요.
 
-`create_agent_runtime` requires a packaged artifact (S3 zip or ECR container). There is **no shortcut that takes `model`+`systemPrompt`+`tools` arguments**. The skill docs at `/home/ubuntu/.agents/skills/bedrock-agentcore/SKILL.md` confirm this.
+### `Runtime` 스키마 (runtimes 배열 내 아이템)
+**필수**: `name`, `build` (CodeZip|Container), `entrypoint`, `codeLocation`
+**선택**: `description`, `dockerfile`, `runtimeVersion` (Python 3.10-3.14 or Node 18/20/22), `envVars`, `networkMode` (PUBLIC|VPC), `networkConfig` (subnets+securityGroups), `instrumentation.enableOtel`, `protocol` (HTTP|MCP|A2A|AGUI), `requestHeaderAllowlist`, `executionRoleArn`, `authorizerType` (AWS_IAM|CUSTOM_JWT), `authorizerConfiguration` (OIDC JWT 상세), `lifecycleConfiguration` (idle/maxLifetime), `filesystemConfigurations` (sessionStorage.mountPath)
+
+### Memory 스키마
+- 필수: `name`, `eventExpiryDuration`
+- 전략 타입: `SEMANTIC`, `SUMMARIZATION`, `USER_PREFERENCE`, `EPISODIC`
+
+### Credential 스키마
+- Discriminated union: `ApiKeyCredentialProvider` | `OAuthCredentialProvider`
+
+### Gateway/Target 스키마
+- targetType: `lambda`, `mcpServer`, `openApiSchema`, `smithyModel`, `apiGateway`, `lambdaFunctionArn`
+- compute.host: `Lambda` | `AgentCoreRuntime`
+- 구현 언어: Python 또는 TypeScript
+
+### Evaluator 스키마
+- level: `SESSION` | `TRACE` | `TOOL_CALL`
+- config: `llmAsAJudge` 또는 `codeBased` (managed/external Lambda)
 
 ---
 
-## 3. Working Example (smallest deploy→invoke)
+## 4. 지원 프레임워크/모델 프로바이더
 
-From the official quickstart (verified against installed SDK):
+### 프레임워크 (README Table 기준)
+| Framework | Notes |
+|---|---|
+| Strands Agents | AWS-native, streaming (기본값) |
+| LangChain/LangGraph | Graph-based workflows |
+| CrewAI | Multi-agent orchestration |
+| Google ADK | Gemini only |
+| OpenAI Agents | OpenAI only |
+| AutoGen | HTTP 템플릿에만 존재 |
 
-```python
-# my_agent.py
-from bedrock_agentcore import BedrockAgentCoreApp
-from strands import Agent
+**결론**: Strands는 "기본값"이지 "유일"하지 않다. 6개 중 5개가 실제 템플릿 디렉터리를 가진다.
 
-app = BedrockAgentCoreApp()
-agent = Agent()  # Strands — THIS is where model/system_prompt/tools live
+### 모델 프로바이더 (README)
+| Provider | Default Model |
+|---|---|
+| Amazon Bedrock (no key) | `us.anthropic.claude-sonnet-4-5-20250514-v1:0` |
+| Anthropic (key) | `claude-sonnet-4-5-20250514` |
+| Google Gemini (key) | `gemini-2.5-flash` |
+| OpenAI (key) | `gpt-4.1` |
 
-@app.entrypoint
-def invoke(payload):
-    result = agent(payload.get("prompt", "Hello!"))
-    return {"result": result.message}
+**확인**: Bedrock 기본 모델 = Sonnet **4.5** (블로그 주장과 일치). 단, 실제 모델 ID 문자열은 `20250514-v1:0`로 2025년 5월 스냅샷. 2026년 현 시점 기준으로는 오래된 기본값일 수 있음.
 
-if __name__ == "__main__":
-    app.run()
+---
+
+## 5. 관측성 기능 (중요!)
+
+### CLI 런타임 help (v0.11.0) 기준
 ```
-
-For the 3-field version the blog describes:
-
-```python
-agent = Agent(
-    model="us.anthropic.claude-sonnet-4-5-v1:0",
-    system_prompt="You are a helpful assistant.",
-    tools=[my_tool, other_tool],
-)
+agentcore obs
+├── show  - Show trace details with full visualization
+└── list  - List all traces in a session with numbered index
 ```
+**`logs`, `traces list`, `traces get`가 obs 하위에 없음**. help에는 `--help` 덤프에서도 없다.
 
-Programmatic invoke after deploy:
-```python
-import json, uuid, boto3
-client = boto3.client('bedrock-agentcore')
-r = client.invoke_agent_runtime(
-    agentRuntimeArn="<ARN>",
-    runtimeSessionId=str(uuid.uuid4()),
-    payload=json.dumps({"prompt": "Hello"}).encode(),
-    qualifier="DEFAULT",
-)
-print(json.loads(b''.join(r["response"]).decode()))
-```
+### README 주장 vs 실제
+- README "Observability" 섹션: `logs`, `traces list`, `traces get`, `status`를 최상위 커맨드로 광고
+- 실제 설치된 0.11.0 바이너리: `obs show` / `obs list`만 존재
+- **문서 드리프트** (npm README는 로드맵/미래 기능을 반영, CLI 런타임은 현재 구현만 반영)
 
-Citation: https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html
+### OpenTelemetry
+- `@opentelemetry/*` 여러 패키지 의존 (api, exporter-metrics-otlp-http, otlp-transformer, resources, sdk-metrics)
+- Runtime 스키마에 `instrumentation.enableOtel: boolean` (default true)
+- `configure --disable-otel` 플래그 존재
 
 ---
 
-## 4. Session Isolation — What AWS Officially Says
+## 6. 특정 키워드 존재/부재
 
-**microVM is officially documented. Firecracker is NOT named publicly.**
+| 키워드 | 결과 |
+|---|---|
+| **Firecracker** | `/usr/lib/node_modules/@aws/agentcore/`의 어느 문서·코드에도 없음 |
+| **microVM / micro-vm / micro VM** | 없음 |
+| **Skills** (AgentCore 기능으로) | 없음. "skill"은 npm 패키지 설명·README 어디에도 등장하지 않음 |
+| **CodeZip** | 있음 (build 타입 중 하나) |
+| **Container** | 있음 (ARM64 CodeBuild) |
+| **ECR / CodeBuild** | 있음 (destroy 및 deploy 설명에 등장) |
+| **Session storage** | 있음 (`filesystemConfigurations.sessionStorage.mountPath`) |
+| **VPC mode** | 있음 (networkMode PUBLIC|VPC) |
 
-Exact AWS wording (from devguide `runtime-sessions.html`):
-
-> "Each user session in AgentCore Runtime receives its own dedicated microVM with isolated Compute, memory, and filesystem resources. This prevents one user's agent from accessing another user's data. After session completion, the entire microVM is terminated and memory is sanitized…"
-
-> "AgentCore Runtime provisions a dedicated execution environment (microVM) for each session. Context is preserved between invocations to the same session."
-
-> "Amazon Bedrock AgentCore uses the session header to route requests to the same microVM instance."
-
-Source URL: https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-sessions.html
-
-Verdict on blog: "microVM" claim = correct. "Firecracker" claim = plausible but not confirmed by AWS publicly; the blog should not assert it as fact.
-
----
-
-## 5. Strands as Internal Engine?
-
-**Verdict: FALSE. Strands is one of several supported frameworks, not the internal engine.**
-
-- AWS FAQs list Strands alongside LangGraph, CrewAI, etc. as optional frameworks.
-- The AgentCore SDK (`bedrock_agentcore.runtime.BedrockAgentCoreApp`) is a **Starlette HTTP server wrapper** — framework-agnostic. You can deploy any Python agent code (pure functions, LangGraph, CrewAI, Autogen, etc.) as long as it exposes an `/invocations` endpoint.
-- Evidence: the `agentcore create` CLI has feature modules for `strands/`, `langchain_langgraph/`, `crewai/`, `openaiagents/`, `googleadk/`, `autogen/` — all first-class.
-- Strands IS the default template when using `agentcore create`, which is probably why the blog author inferred it was "internal". It is not.
-
-Source: `/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore_starter_toolkit/create/features/` (directory listing).
+**결론**: 블로그가 "Firecracker microVM 격리"나 "Skills 기능"을 CLI 레벨에서 증명되는 기능인 것처럼 서술했다면, **CLI/npm 패키지 레벨에서는 근거 없음**. AWS 문서/서비스 내부 런타임 구현에 대한 주장이라면 별도 확인 필요(본 리서치 범위 밖).
 
 ---
 
-## 6. Preview vs GA, Regions
+## 7. 블로그 주장별 예비 검증 매트릭스
 
-**GA — NOT preview.** Generally available since **October 13, 2025**.
-
-Source: AWS blog "Amazon Bedrock AgentCore is now generally available" (October 13, 2025).
-
-**Supported regions (9, per FAQ):**
-- US East (N. Virginia) `us-east-1`
-- US East (Ohio) `us-east-2`
-- US West (Oregon) `us-west-2` ← our target
-- Europe (Dublin) `eu-west-1`
-- Europe (Frankfurt) `eu-central-1`
-- Asia Pacific (Mumbai) `ap-south-1`
-- Asia Pacific (Singapore) `ap-southeast-1`
-- Asia Pacific (Sydney) `ap-southeast-2`
-- Asia Pacific (Tokyo) `ap-northeast-1`
-
-No enrollment needed. Standard IAM permissions suffice.
-
-Confirmed on our account (`123456789012`, us-west-2): `aws bedrock-agentcore-control list-agent-runtimes` returned an existing runtime `deep_insight_runtime_vpc` with status `READY`.
+| 블로그 주장 | 예비 판정 | 근거 |
+|---|---|---|
+| "3-선언만으로 에이전트 배포" | **부분 참** | name+version만 필수, 하지만 runtime 최소 1개 + entrypoint+codeLocation 필요 -> 실질 4-5 필드 |
+| "Sonnet 4.5가 기본 모델" | **참** | README 명시, `us.anthropic.claude-sonnet-4-5-20250514-v1:0` |
+| "Strands가 유일한 프레임워크" | **거짓** | 6개 지원(기본값일 뿐). LangChain, CrewAI, GoogleADK, OpenAI, AutoGen 모두 템플릿 존재 |
+| "Strands가 기본 프레임워크" | **참** | `--agent-framework`의 default value |
+| "Firecracker microVM 사용" | **근거 없음(로컬)** | CLI/npm에 언급 전무. AWS 런타임 구현 주장이면 별도 검증 필요 |
+| "Skills 기능 존재" | **거짓** | CLI·README·스키마에 `skill` 키워드 완전 부재 |
+| "obs logs/traces 커맨드" | **문서 드리프트** | README는 있다고 하지만 v0.11.0 help에는 `obs show/list`만. 블로그가 README만 근거로 썼다면 실제 동작과 불일치 |
+| "CDK + L3 construct 자동 생성" | **참** | `agentcore/cdk/` 디렉터리 + `@aws/agentcore-cdk` 언급 |
+| "ECR + CodeBuild로 ARM64 컨테이너" | **참** | deploy help에 "Build ARM64 containers in the cloud with CodeBuild" 명시 |
+| "CodeZip (direct code deploy)도 지원" | **참** | build 타입에 CodeZip 존재, deploy help에도 direct_code_deploy 설명 |
+| "Multi-protocol (HTTP/MCP/A2A/AGUI)" | **참** | Runtime protocol enum에 4개 값 모두 존재 |
+| "VPC 모드 지원" | **참** | `networkMode: VPC`, `configure --vpc --subnets --security-groups` |
+| "Memory 4가지 전략" | **참** | SEMANTIC, SUMMARIZATION, USER_PREFERENCE, EPISODIC |
+| "Cedar policy 엔진" | **참** | `agentcore policy` 서브커맨드 14개 |
 
 ---
 
-## 7. VTEX / Rodrigo Moreira Quote
+## 8. 블로그 검증 시 추가로 할 것
 
-**Could not verify.** Google search for "VTEX" + "Rodrigo Moreira" + "AgentCore" returned no direct hits reachable by WebFetch. The AWS GA announcement and product page do not include this quote in the parts we fetched. It may exist in a press release or AWS case study not indexed in our fetched pages, but we cannot confirm.
-
-Recommendation: the blog author should cite the primary source (AWS case study URL or press release URL) before publishing, or drop the quote.
-
----
-
-## 8. Gotchas & Gaps (things the blog got wrong or glossed over)
-
-1. **"Managed Harness" is not a real product name.** The blog invented a label. Use "AgentCore Runtime" + "BedrockAgentCoreApp" + "Strands `Agent()`" to describe the same thing accurately.
-2. **"3-field deploy" conflates two layers.** Those 3 fields are the Strands `Agent()` constructor, not an AgentCore deploy API. AgentCore's `create_agent_runtime` needs an S3 zip or ECR image — never a 3-field call.
-3. **"Preview" is wrong.** GA since Oct 2025.
-4. **"Firecracker" is not public knowledge.** microVM is documented; the specific hypervisor is AWS-internal.
-5. **Strands ≠ internal engine.** It's the default template only.
-6. **Cold start matters.** Each new session = new microVM = cold start cost; session affinity via session header is required to avoid it.
-7. **arm64 only.** All AgentCore deployments run on arm64; packaging dependencies must target aarch64-manylinux2014.
-8. **IAM eventual consistency.** `create_agent_runtime` after a fresh role create needs retry (toolkit handles this via `retry_create_with_eventual_iam_consistency`).
-9. **There are now TWO toolkits:** the Python `bedrock-agentcore-starter-toolkit` (what we have installed, described as "legacy" on GitHub) and a newer npm `@aws/agentcore` CLI. For this experiment, stick with the Python toolkit — it matches our installed version (1.2.0 / 0.2.6) and the blog's Python orientation.
-
----
-
-## 9. Recommended Path for Phase 2 (Implementer)
-
-Given findings, the Implementer should:
-
-### Goal
-Prove (or disprove) the blog's "3 declarations → deployable agent" claim by executing the **smallest possible deploy→invoke→destroy** cycle on our us-west-2 account.
-
-### Concrete steps
-1. **Write `main.py`** exactly matching the blog's 3-field pattern:
-   ```python
-   from bedrock_agentcore import BedrockAgentCoreApp
-   from strands import Agent, tool
-
-   app = BedrockAgentCoreApp()
-
-   @tool
-   def get_time() -> str:
-       from datetime import datetime
-       return datetime.utcnow().isoformat()
-
-   agent = Agent(
-       model="us.anthropic.claude-sonnet-4-5-v1:0",   # pick a model available in us-west-2
-       system_prompt="You are a concise assistant.",
-       tools=[get_time],
-   )
-
-   @app.entrypoint
-   def invoke(payload):
-       return {"result": str(agent(payload.get("prompt", "hi")))}
-
-   if __name__ == "__main__":
-       app.run()
-   ```
-2. **Write `requirements.txt`** with `bedrock-agentcore`, `strands-agents`.
-3. **Verify local**: `python main.py &` + `curl localhost:8080/invocations`. (Tests the Starlette wrapper.)
-4. **Deploy**:
-   - `agentcore configure -e main.py -n harness_test --disable-memory --region us-west-2`
-   - `agentcore deploy` — this is where the blog's claim is tested. If it "just works" with the 3-field pattern, blog's spirit is validated (even if terminology is wrong).
-5. **Invoke**: `agentcore invoke '{"prompt": "What time is it?"}'` — verify tool call works, note latency, note session ID.
-6. **Re-invoke with same session ID** to prove session affinity / microVM persistence.
-7. **Destroy**: `agentcore destroy` — ensure clean teardown (also removes CodeBuild project, ECR images, optional execution role).
-
-### Things to measure for the Validator (Phase 3)
-- Total time from `configure` → `READY` status (blog claims < 5 min).
-- Cold-start latency on first invoke.
-- Warm invoke latency on same session.
-- CloudWatch log group name and whether OTel traces appear (built-in observability claim).
-- Number of files the developer had to write (the blog's "just 3 declarations" implicit claim).
-- IAM role: did `agentcore deploy` auto-create one? (It should, via `get_or_create_runtime_execution_role`.)
-
-### Key risks for Implementer
-- **Model ID**: use us-west-2-available inference profile (`us.anthropic.claude-sonnet-4-5-v1:0` or `us.anthropic.claude-haiku-4-5-v1:0`). Don't use `global.` IDs that may not be supported.
-- **IAM eventual consistency**: first deploy may retry silently; that's normal.
-- **CodeBuild is now default** (not container). Deployment type `direct_code_deploy` zips the code; no Docker needed.
-- **Profile**: use `AWS_PROFILE=<your-profile>` for all CLI/boto3 calls.
-
----
-
-## Sources Cited
-
-| # | Source | Used For |
-|---|--------|----------|
-| 1 | `/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore/runtime/app.py` | Verifying BedrockAgentCoreApp is Starlette wrapper |
-| 2 | `/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore_starter_toolkit/cli/runtime/commands.py` | Verifying `configure`/`deploy`/`invoke`/`destroy` CLI |
-| 3 | `/home/ubuntu/.local/lib/python3.10/site-packages/bedrock_agentcore_starter_toolkit/create/features/strands/templates/runtime_only/common/main.py.j2` | Confirming 3-field pattern is Strands, not AgentCore |
-| 4 | `/home/ubuntu/.agents/skills/bedrock-agentcore/SKILL.md` | Verified `create_agent_runtime` API shape |
-| 5 | https://aws.github.io/bedrock-agentcore-starter-toolkit/user-guide/runtime/quickstart.html | Minimal deploy recipe |
-| 6 | https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/runtime-sessions.html | microVM session isolation wording |
-| 7 | https://aws.amazon.com/bedrock/agentcore/faqs/ | Regions, framework support |
-| 8 | https://aws.amazon.com/blogs/aws/introducing-amazon-bedrock-agentcore-securely-deploy-and-operate-ai-agents-at-any-scale/ | GA Oct 13 2025, session isolation phrasing |
-| 9 | Live AWS CLI test (us-west-2) | Confirmed API availability on our account |
+1. `agentcore create --non-interactive --template basic` 실행해서 실제로 생성되는 파일 트리 스냅샷을 README 기대값과 대조
+2. 생성된 `agentcore.json` 초기값에 `version`이 무슨 숫자로 들어가는지 확인(1 예상)
+3. `agentcore validate` 실행으로 Zod 스키마가 실제로 name/version만 없으면 reject하는지 확인
+4. `agentcore obs --help`의 결과와 README 주장 간 차이를 실측으로 기록(블로그에 "문서가 현실보다 앞서감" 주석을 달 수 있음)
+5. Firecracker/microVM 주장은 AWS 공식 AgentCore Runtime 문서(블로그/프로덕트 페이지)에서만 확인 가능 — CLI 범위 밖임을 블로그에서 명시

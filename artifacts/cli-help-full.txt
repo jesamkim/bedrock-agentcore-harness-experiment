@@ -1,0 +1,370 @@
+========== agentcore create --help ==========
+                                                                                
+ Usage: agentcore create [OPTIONS] COMMAND [ARGS]...                            
+                                                                                
+ create an agentcore project                                                    
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --project-name      -p                 TEXT               Project name to    │
+│                                                           create (assumes    │
+│                                                           current folder for │
+│                                                           creation)          │
+│ --template          -t                 [basic|production  The template to    │
+│                                        ]                  use. `basic        │
+│                                                           creates just       │
+│                                                           runtime code.      │
+│                                                           `production`       │
+│                                                           includes an MCP    │
+│                                                           setup and IaC.     │
+│                                                           [default: (basic)] │
+│ --agent-framework                      [Strands|LangChai  Agent SDK provider │
+│                                        n_LangGraph|Googl  (Strands,          │
+│                                        eADK|OpenAIAgents  ClaudeAgents,      │
+│                                        |AutoGen|CrewAI]   OpenAI, etc.)      │
+│                                                           [default:          │
+│                                                           (Strands)]         │
+│ --model-provider    -mp                [Bedrock|OpenAI|A  Model provider to  │
+│                                        nthropic|Gemini]   use with the Agent │
+│                                                           SDK                │
+│                                                           [default:          │
+│                                                           (Bedrock)]         │
+│ --provider-api-key  -key               TEXT               API key for the    │
+│                                                           model provider     │
+│ --iac                                  [CDK|Terraform]    Infrastructure as  │
+│                                                           code provider (CDK │
+│                                                           or Terraform)      │
+│                                                           [default: (CDK)]   │
+│ --non-interactive                                         Run in             │
+│                                                           non-interactive    │
+│                                                           mode               │
+│ --venv                    --no-venv                       Automatically      │
+│                                                           create a venv and  │
+│                                                           install            │
+│                                                           dependencies       │
+│                                                           [default: venv]    │
+│ --help                                                    Show this message  │
+│                                                           and exit.          │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ import   Import an Amazon Bedrock Agent to generate an AgentCore project.    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore dev --help ==========
+                                                                                
+ Usage: agentcore dev [OPTIONS]                                                 
+                                                                                
+ Start a local development server for your agent with hot reloading.            
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --port  -p        INTEGER  Port for development server (default: 8080)       │
+│ --env   -env      TEXT     Environment variables for agent (format:          │
+│                            KEY=VALUE)                                        │
+│ --help                     Show this message and exit.                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore deploy --help ==========
+                                                                                
+ Usage: agentcore deploy [OPTIONS]                                              
+                                                                                
+ Deploy Bedrock AgentCore with three deployment modes (formerly 'launch').      
+                                                                                
+ 🚀 DEFAULT (no flags): Cloud runtime (RECOMMENDED)                             
+    - direct_code_deploy deployment: Direct deploy Python code to runtime       
+    - Container deployment: Build ARM64 containers in the cloud with CodeBuild  
+    - Deploy to Bedrock AgentCore runtime                                       
+    - No local Docker required                                                  
+                                                                                
+ 💻 --local: Local runtime                                                      
+    - Container deployment: Build and run container locally (requires           
+ Docker/Finch/Podman)                                                           
+    - direct_code_deploy deployment: Run Python script locally with uv          
+    - For local development and testing                                         
+                                                                                
+ 🔧 --local-build: Local build + cloud runtime                                  
+    - Build container locally with Docker                                       
+    - Deploy to Bedrock AgentCore runtime                                       
+    - Only supported for container deployment type                              
+    - requires Docker/Finch/Podman                                              
+    - Use when you need custom build control but want cloud deployment          
+                                                                                
+ MIGRATION GUIDE:                                                               
+ - OLD: agentcore launch --code-build  →  NEW: agentcore deploy                 
+ - OLD: agentcore launch --local       →  NEW: agentcore deploy --local         
+ (unchanged)                                                                    
+ - NEW: agentcore deploy --local-build (build locally + deploy to cloud)        
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --agent                    -a        TEXT  Agent name (use 'agentcore        │
+│                                            configure list' to see available  │
+│                                            agents)                           │
+│ --local                    -l              Run locally for development and   │
+│                                            testing                           │
+│ --local-build              -lb             Build locally and deploy to cloud │
+│                                            (container deployment only)       │
+│ --image-tag                -t        TEXT  Custom image tag for version      │
+│                                            isolation (default:               │
+│                                            auto-generated timestamp          │
+│                                            YYYYMMDD-HHMMSS-mmm). Each        │
+│                                            deployment gets a unique          │
+│                                            immutable version.                │
+│ --auto-update-on-conflict  -auc            Automatically update existing     │
+│                                            agent instead of failing with     │
+│                                            ConflictException                 │
+│ --force-rebuild-deps       -frd            Force rebuild of dependencies     │
+│                                            even if cached                    │
+│                                            (direct_code_deploy deployments   │
+
+========== agentcore invoke --help ==========
+                                                                                
+ Usage: agentcore invoke [OPTIONS] PAYLOAD                                      
+                                                                                
+ Invoke Bedrock AgentCore endpoint.                                             
+                                                                                
+╭─ Arguments ──────────────────────────────────────────────────────────────────╮
+│ *    payload      TEXT  JSON payload to send [required]                      │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --agent         -a       TEXT     Agent name (use 'bedrock_agentcore         │
+│                                   configure list' to see available)          │
+│ --session-id    -s       TEXT                                                │
+│ --bearer-token  -bt      TEXT     Bearer token for OAuth authentication      │
+│ --local         -l                Send request to a running local container  │
+│ --dev           -d                Send request to local development server   │
+│ --port                   INTEGER  Port for local development server          │
+│                                   [default: 8080]                            │
+│ --user-id       -u       TEXT     User id for authorization flows            │
+│ --headers                TEXT     Custom headers (format:                    │
+│                                   'Header1:value,Header2:value2'). Headers   │
+│                                   will be auto-prefixed with                 │
+│                                   'X-Amzn-Bedrock-AgentCore-Runtime-Custom-' │
+│                                   if not already present.                    │
+│ --help                            Show this message and exit.                │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore status --help ==========
+                                                                                
+ Usage: agentcore status [OPTIONS]                                              
+                                                                                
+ Get Bedrock AgentCore status including config and runtime details.             
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --agent    -a      TEXT  Agent name (use 'bedrock_agentcore configure list'  │
+│                          to see available)                                   │
+│ --verbose  -v            Verbose json output of config, agent and endpoint   │
+│                          status                                              │
+│ --help                   Show this message and exit.                         │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore destroy --help ==========
+                                                                                
+ Usage: agentcore destroy [OPTIONS]                                             
+                                                                                
+ Destroy Bedrock AgentCore resources.                                           
+                                                                                
+ This command removes the following AWS resources for the specified agent:      
+ - Bedrock AgentCore endpoint (if exists)                                       
+ - Bedrock AgentCore agent runtime                                              
+ - ECR images (all images in the agent's repository)                            
+ - CodeBuild project                                                            
+ - IAM execution role (only if not used by other agents)                        
+ - Agent deployment configuration                                               
+ - ECR repository (only if --delete-ecr-repo is specified)                      
+                                                                                
+ CAUTION: This action cannot be undone. Use --dry-run to preview changes first. 
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --agent            -a      TEXT  Agent name (use 'agentcore configure list'  │
+│                                  to see available agents)                    │
+│ --dry-run                        Show what would be destroyed without        │
+│                                  actually destroying anything                │
+│ --force                          Skip confirmation prompts and destroy       │
+│                                  immediately                                 │
+│ --delete-ecr-repo                Also delete the ECR repository after        │
+│                                  removing images                             │
+│ --help                           Show this message and exit.                 │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore obs --help ==========
+                                                                                
+ Usage: agentcore obs [OPTIONS] COMMAND [ARGS]...                               
+                                                                                
+ Query and visualize agent observability data (spans, traces, logs)             
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ show   Show trace details with full visualization.                           │
+│ list   List all traces in a session with numbered index for easy selection.  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore gateway --help ==========
+                                                                                
+ Usage: agentcore gateway [OPTIONS] COMMAND [ARGS]...                           
+                                                                                
+ Manage Bedrock AgentCore Gateways                                              
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create-mcp-gateway          Creates an MCP Gateway.                          │
+│ create-mcp-gateway-target   Creates an MCP Gateway Target.                   │
+│ delete-mcp-gateway          Deletes an MCP Gateway.                          │
+│ delete-mcp-gateway-target   Deletes an MCP Gateway Target.                   │
+│ list-mcp-gateways           Lists MCP Gateways.                              │
+│ get-mcp-gateway             Gets details for a specific MCP Gateway.         │
+│ list-mcp-gateway-targets    Lists targets for an MCP Gateway.                │
+│ get-mcp-gateway-target      Gets details for a specific Gateway Target.      │
+│ update-gateway              Update gateway configuration.                    │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore memory --help ==========
+                                                                                
+ Usage: agentcore memory [OPTIONS] COMMAND [ARGS]...                            
+                                                                                
+ Manage Bedrock AgentCore Memory resources                                      
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create   Create a new memory resource.                                       │
+│ get      Get details of a memory resource.                                   │
+│ list     List all memory resources.                                          │
+│ delete   Delete a memory resource.                                           │
+│ status   Get memory provisioning status.                                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore eval --help ==========
+                                                                                
+ Usage: agentcore eval [OPTIONS] COMMAND [ARGS]...                              
+                                                                                
+ Evaluate agent performance using built-in and custom evaluators                
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ run         Run evaluation on a session.                                     │
+│ evaluator   Manage custom evaluators (create, list, update, delete)          │
+│ online      Manage online evaluation configurations for continuous           │
+│             evaluation                                                       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore identity --help ==========
+                                                                                
+ Usage: agentcore identity [OPTIONS] COMMAND [ARGS]...                          
+                                                                                
+ Manage Identity service resources                                              
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create-credential-provider   Create an OAuth2 credential provider for        │
+│                              outbound authentication (3LO support).          │
+│ create-workload-identity     Create a workload identity for your agent.      │
+│ update-workload-identity     Update workload identity callback URLs.         │
+│ get-cognito-inbound-token    Get an access token from Cognito for Runtime    │
+│                              inbound authentication.                         │
+│ list-credential-providers    List configured credential providers from       │
+│                              .bedrock_agentcore.yaml.                        │
+│ setup-cognito                Create Cognito user pools for Identity          │
+│                              authentication.                                 │
+│ setup-aws-jwt                Set up AWS IAM JWT federation for M2M           │
+│                              authentication without secrets.                 │
+│ list-aws-jwt                 List AWS IAM JWT federation configuration.      │
+│ cleanup                      Clean up Identity resources for an agent.       │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore policy --help ==========
+                                                                                
+ Usage: agentcore policy [OPTIONS] COMMAND [ARGS]...                            
+                                                                                
+ Manage Bedrock AgentCore Policy Engines and Policies                           
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --help          Show this message and exit.                                  │
+╰──────────────────────────────────────────────────────────────────────────────╯
+╭─ Commands ───────────────────────────────────────────────────────────────────╮
+│ create-policy-engine            Create a new policy engine.                  │
+│ get-policy-engine               Get policy engine details.                   │
+│ update-policy-engine            Update a policy engine.                      │
+│ list-policy-engines             List policy engines.                         │
+│ delete-policy-engine            Delete a policy engine.                      │
+│ create-policy                   Create a new policy.                         │
+│ get-policy                      Get policy details.                          │
+│ update-policy                   Update a policy.                             │
+│ list-policies                   List policies.                               │
+│ delete-policy                   Delete a policy.                             │
+│ start-policy-generation         Start a policy generation workflow.          │
+│ get-policy-generation           Get policy generation details.               │
+│ list-policy-generation-assets   List policy generation assets (generated     │
+│                                 policies).                                   │
+│ list-policy-generations         List policy generations.                     │
+╰──────────────────────────────────────────────────────────────────────────────╯
+
+
+========== agentcore configure --help ==========
+                                                                                
+ Usage: agentcore configure [OPTIONS] COMMAND [ARGS]...                         
+                                                                                
+ Configuration management                                                       
+                                                                                
+╭─ Options ────────────────────────────────────────────────────────────────────╮
+│ --create               -c                                                    │
+│ --entrypoint           -e         TEXT                  Entry point: file    │
+│                                                         path (e.g.,          │
+│                                                         agent.py) or         │
+│                                                         directory path       │
+│                                                         (auto-detects        │
+│                                                         main.py, agent.py,   │
+│                                                         app.py)              │
+│ --name                 -n         TEXT                                       │
+│ --execution-role       -er        TEXT                                       │
+│ --code-build-executi…  -cber      TEXT                                       │
+│ --ecr                  -ecr       TEXT                                       │
+│ --s3                   -s3        TEXT                  S3 bucket for        │
+│                                                         direct_code_deploy   │
+│                                                         deployment           │
+│ --container-runtime    -ctr       TEXT                                       │
+│ --requirements-file    -rf        TEXT                  Path to requirements │
+│                                                         file                 │
+│ --disable-otel         -do                              Disable              │
+│                                                         OpenTelemetry        │
+│ --disable-memory       -dm                              Disable memory       │
+│ --authorizer-config    -ac        TEXT                  OAuth authorizer     │
+│                                                         configuration as     │
+│                                                         JSON string          │
+│ --request-header-all…  -rha       TEXT                  Comma-separated list │
+│                                                         of allowed request   │
+│                                                         headers              │
+│                                                         (Authorization or    │
+│                                                         X-Amzn-Bedrock-Agen… │
+│ --vpc                                                   Enable VPC           │
+│                                                         networking mode      │
+│                                                         (requires --subnets  │
+│                                                         and                  │
+│                                                         --security-groups)   │
+│ --subnets                         TEXT                  Comma-separated list │
+│                                                         of subnet IDs (e.g., │
+│                                                         subnet-abc123,subne… │
+│                                                         Required with --vpc. │
+│ --security-groups                 TEXT                  Comma-separated list │
+│                                                         of security group    │
+│                                                         IDs (e.g.,           │
+│                                                         sg-xyz789). Required │
+│                                                         with --vpc.          │
+│ --idle-timeout                    INTEGER RANGE         Idle runtime session │
+

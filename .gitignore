@@ -30,3 +30,7 @@ aws_credentials*
 .vscode/
 .idea/
 .DS_Store
+# experiment-specific
+my-project/
+example-agent/.venv/
+*.egg-info/

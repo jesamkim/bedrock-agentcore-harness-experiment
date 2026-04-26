@@ -1,257 +1,201 @@
-# Bedrock AgentCore Harness 실험 (Preview, 2026-04)
+# Bedrock AgentCore Harness 실험 — `@aws/agentcore` CLI v0.11.0 실측
 
-> ⚠️ **작업 중 (Work in Progress)** — 2026-04-26
->
-> **이 레포의 현재 실험은 블로그의 검증 대상을 벗어났습니다.**
->
-> 블로그는 2026-04-22 **프리뷰로 공개된 Managed Harness** (`agentcore create/dev/deploy` CLI, `harness.json` 선언형 스키마)를 다룹니다. 하지만 이 레포에 현재 포함된 코드는 그 아래 레이어인 **기존 AgentCore Runtime (2025-10-13 GA) + Strands Agents** 조합을 `bedrock-agentcore-starter-toolkit`으로 직접 배포한 실험입니다. 두 레이어는 추상화 수준이 다릅니다.
->
-> 실측 자료(27.8초 배포, microVM 격리, Observability 네임스페이스 등)는 Runtime 레이어에 대해서는 그대로 유효하므로 참고용으로 남겨둡니다. **Managed Harness 자체를 타깃팅한 실험은 재실행 예정이며, 결과가 나오는 대로 이 레포의 내용을 교체합니다.**
->
-> 블로그: https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/
+> 2026-04-22 AWS가 발표한 **Amazon Bedrock AgentCore Managed Harness** (프리뷰) + **AgentCore CLI** + **AgentCore Skills** 3종 세트에 대한 [블로그 글](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)의 실측 검증 레포입니다.
 
 ---
 
-<div align="center">
+## TL;DR
 
-**AWS Bedrock AgentCore Runtime + Strands Agents 실전 검증 하네스** *(현재 버전)*
+- **대상**: `@aws/agentcore` v0.11.0 (실제로는 `bedrock-agentcore-starter-toolkit` Python CLI의 npm 래퍼)
+- **배포 실측**: **32초** (HelloAgent 기본 템플릿, `direct_code_deploy`, us-west-2)
+- **세션 격리**: 서로 다른 `sessionId` 간 코드워드 교차 오염 없음, CloudWatch log stream도 세션별 분리
+- **관측성**: 메트릭 네임스페이스 `AWS/Bedrock-AgentCore`, log group `/aws/bedrock-agentcore/runtimes/<ID>-DEFAULT` 기본 생성, OTel 자동 wrap
+- **정리**: `agentcore destroy --force`로 Runtime + S3 artifacts + IAM role 일관 삭제
 
-`direct_code_deploy` 27.8초 배포 · 세션 격리 행동 검증 · CloudWatch Observability 자동 수집 실측
+## 블로그 7개 주장 판정
 
-</div>
+| # | 주장 | 판정 | 근거 |
+|---|---|---|---|
+| 1 | `harness.json` 3-선언 구조 (model + systemPrompt + tools) | **부분 거짓** — 실제 CLI는 Python `main.py` + `.bedrock_agentcore.yaml` 조합 | [results.md](results.md) |
+| 2 | microVM 세션 격리 | **사실** | [artifacts/04-session-isolation.log](artifacts/04-session-isolation.log) |
+| 3 | 내장 도구 바인딩 (Browser/Code Interpreter/Gateway/MCP) | **사실** (Python `tools=[]`로 바인딩) | [example-agent/src/main.py](example-agent/src/main.py) |
+| 4 | Skills 통합 (Kiro/Claude Code/Codex/Cursor) | **미확인** (CLI 범위 밖, IDE 플러그인 영역) | — |
+| 5 | 관측성 (`AWS/Bedrock-AgentCore` 네임스페이스) | **사실** | [artifacts/05-observability.log](artifacts/05-observability.log) |
+| 6 | Strands Agents가 엔진 | **부분 거짓** — Strands는 **기본값**이고 CLI는 6개 framework 지원 (LangChain/LangGraph, Google ADK, OpenAI Agents, AutoGen, CrewAI 포함) | [artifacts/cli-help-full.txt](artifacts/cli-help-full.txt) |
+| 7 | 수 분 내 배포 | **사실** — 32초 실측 | [artifacts/03-deploy.log](artifacts/03-deploy.log) |
 
----
+### 추가 발견
 
-## 이 레포는 무엇인가
+- **Terraform IaC 이미 지원**: `agentcore create --iac [CDK|Terraform]`. 블로그는 "Terraform 이어서 제공 예정"이라고 서술 → **거짓**.
+- **Anthropic 직접 API 지원**: `--model-provider [Bedrock|OpenAI|Anthropic|Gemini]`. 블로그는 "Bedrock/OpenAI/Gemini 세 곳"이라고 서술 → Anthropic 누락.
+- **HelloAgent 템플릿 기본 모델은 Claude Sonnet 4.5** (`global.anthropic.claude-sonnet-4-5-20250929-v1:0`). 블로그가 말한 Sonnet 4.6과 다름.
 
-2026년 4월 22일 AWS가 발표한 [Bedrock AgentCore Managed Harness (Preview)](https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/)를 분석한 블로그 글을 실측으로 뒷받침하기 위해 만들었습니다.
-
-단, 앞의 경고 박스에서 밝힌 대로 **현재 포함된 코드는 Managed Harness CLI가 아니라 그 아래 AgentCore Runtime + Strands 조합을 직접 다루는 실험**입니다. 추상화 레이어가 다르므로, 아래 표의 판정은 "Runtime 레이어에서 관찰된 사실"로 읽어야 합니다. Managed Harness 자체에 대한 재검증이 완료되면 이 표와 코드가 교체됩니다.
-
-### Runtime 레이어에서 관찰된 사실 (현재 실험)
-
-| 블로그 주장 | Runtime 레이어 관찰 결과 |
-|---|---|
-| microVM 세션 격리 | **사실** (두 세션 간 비밀 값 교차 오염 없음) |
-| Firecracker 사용 | **미확인** (AWS devguide는 "microVM"만 명시, hypervisor 종류 비공개) |
-| Strands가 기본 엔진 | **확인됨** (Managed Harness 컨텍스트 밖이지만, Runtime에서도 Strands는 기본 템플릿) |
-| 관측성 내장 | **사실** (네임스페이스 `AWS/Bedrock-AgentCore`, 메트릭 8종 자동 수집) |
-| 툴 호출 동작 | **사실** (42, 2122 계산 확인 / 단, Strands 1.29 `tool_uses` 메타데이터 빈 값 이슈) |
-
-### Managed Harness 자체에 대해 이 실험이 **검증하지 못한 것**
-
-- `agentcore create` 템플릿에서 `model`, `systemPrompt`, `tools` 3개 선언만으로 배포가 되는가
-- `harness.json` 스키마와 `agentcore dev` 로컬 개발 루프의 동작
-- Managed Harness 전용 내장 도구(`agentcore_browser`, `agentcore_gateway`, `remote_mcp_server`, Code Interpreter) 바인딩
-- Skills 메커니즘과 Managed Harness의 결합
-
-이 항목들은 재실험 대상입니다.
-
-전체 검증 결과와 블로그 수정 제안은 [`blog-corrections.md`](./blog-corrections.md), [`results.md`](./results.md), [`research-findings.md`](./research-findings.md) 참조.
-
-관련 블로그: **[Bedrock AgentCore Managed Harness 심층 해부](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)**
-
----
-
-## 실측 수치 요약
-
-| 항목 | 값 | 비고 |
-|---|---|---|
-| **배포 시간 (direct_code_deploy)** | **27.8초** | configure 0.2s + launch 27.5s + poll 0.1s |
-| Cold invoke latency | 6.57초 | 서버 핸들러 3.55초 |
-| Warm invoke latency | 3.27초 | 같은 `runtimeSessionId` = warm microVM |
-| 패키지 크기 | 59.26 MB | dependencies + main.py |
-| `idleRuntimeSessionTimeout` | 900초 (15분) | 자동 세션 종료 |
-| `maxLifetime` | 28,800초 (8시간) | 세션 최대 수명 |
-| 메트릭 네임스페이스 | `AWS/Bedrock-AgentCore` | **하이픈 주의** |
-| 로그 그룹 패턴 | `/aws/bedrock-agentcore/runtimes/<RUNTIME-ID>-DEFAULT` | 자동 생성 |
-
-### 가장 흥미로운 발견
-
-`direct_code_deploy` 모드는 **CodeBuild/ECR을 사용하지 않습니다**. 로컬 `uv`로 `aarch64-manylinux2014` 크로스 컴파일 → 59 MB ZIP → S3 업로드 구조입니다. 그래서 배포가 블로그의 "<5분" 주장과 달리 27초대에 끝납니다. 런타임 자체는 여전히 ARM64 Graviton에서 실행됩니다.
-
----
-
-## 아키텍처
+## 레포 구조
 
 ```
-┌─────────────────────────────┐
-│  Client (local machine)     │
-│  ├─ uv (cross-compile)      │
-│  └─ bedrock-agentcore SDK   │
-└──────────┬──────────────────┘
-           │ deploy (ZIP 59MB)
-           ▼
-┌─────────────────────────────┐
-│  S3 codebuild-sources/*     │ ← direct_code_deploy 모드
-└──────────┬──────────────────┘
-           │
-           ▼
-┌─────────────────────────────┐
-│  AgentCore Runtime          │
-│  ├─ microVM (per session)   │
-│  ├─ ARM64 Graviton          │
-│  └─ BedrockAgentCoreApp     │
-│     └─ Strands Agent        │
-│        ├─ Claude Sonnet 4.5 │
-│        └─ @tool functions   │
-└──────────┬──────────────────┘
-           │
-           ▼
-┌─────────────────────────────┐
-│  CloudWatch                 │
-│  ├─ /aws/bedrock-agentcore/ │
-│  └─ AWS/Bedrock-AgentCore   │
-│     (Latency, Sessions,     │
-│      Invocations, ...)      │
-└─────────────────────────────┘
+.
+├── README.md                       # 이 파일
+├── results.md                      # 7개 주장별 판정 및 증거
+├── blog-corrections.md             # 블로그 수정 제안 (카테고리 A/B/C)
+├── research-findings.md            # 초기 CLI 조사 (커맨드 맵)
+├── scripts/                        # 시나리오 실행 스크립트 (00~99 순차 실행)
+│   ├── 00-env-check.sh             # 환경 검증
+│   ├── 01-create-project.sh        # agentcore create
+│   ├── 02-dev-local.sh             # agentcore dev 로컬 서버
+│   ├── 03-deploy.sh                # AWS 클라우드 배포
+│   ├── 04-invoke-session-isolation.sh
+│   ├── 05-observability.sh         # CloudWatch metrics/logs 확인
+│   ├── 06-tools-inspect.sh         # 도구/프레임워크 조사
+│   ├── 99-cleanup.sh               # 전체 리소스 정리
+│   └── README.md
+├── artifacts/                      # 실행 결과 로그 (sanitized)
+│   ├── 00-env-check.log
+│   ├── 01-project-tree.log
+│   ├── 02-dev-local.log
+│   ├── 03-deploy.log
+│   ├── 04-session-isolation.log
+│   ├── 05-observability.log
+│   ├── 06-tools-inspect.log
+│   ├── 99-cleanup.log
+│   ├── agent-arn.txt
+│   └── cli-help-full.txt           # agentcore --help 전체 덤프
+├── example-agent/                  # agentcore create가 생성한 기본 템플릿 (샘플)
+│   ├── pyproject.toml
+│   ├── README.md
+│   └── src/
+│       ├── main.py                 # Strands Agent + Code Interpreter + MCP
+│       ├── model/load.py           # BedrockModel 로더
+│       └── mcp_client/client.py    # MCP Gateway 클라이언트
+└── legacy-runtime-experiment/      # 이전(Runtime 레이어) 실험 보존 — 참고용
+    ├── main.py, deploy_agent.py, …
+    └── artifacts/
 ```
 
----
+## 재현 방법
 
-## 사전 준비
+### 사전 요구 사항
 
-- **Python 3.10+**
-- **`uv`** — `direct_code_deploy`가 `aarch64-manylinux2014` 크로스 컴파일에 사용합니다. 없으면 배포 스크립트가 `RuntimeError: uv is required for direct_code_deploy deployment` 에러를 냅니다.
-  ```bash
-  curl -LsSf https://astral.sh/uv/install.sh | sh
-  ```
-- **AWS 계정** — Bedrock + AgentCore 권한, `us-west-2` 리전
-- **모델 액세스 활성화** — `us.anthropic.claude-sonnet-4-5-20250929-v1:0` (날짜 포함 모델 ID 필수, 짧은 형식 `...claude-sonnet-4-5-v1:0`은 동작하지 않음)
+- AWS 계정 (프리뷰 리전 4곳: us-west-2 / us-east-1 / eu-central-1 / ap-southeast-2 중 하나)
+- Python ≥ 3.10, Node ≥ 20
+- AWS CLI profile 설정
+- Bedrock 모델 접근 권한 (기본 템플릿은 Claude Sonnet 4.5)
 
-### AWS 자격 증명
-
-스크립트는 기본 프로파일을 읽도록 설정되어 있습니다(`os.environ.setdefault("AWS_PROFILE", "default")`). 다른 프로파일을 쓰려면 실행 시 환경 변수로 덮어쓰세요.
+### CLI 설치
 
 ```bash
-# 옵션 1: 기본 프로파일
-aws configure
+# npm 래퍼 (실제는 Python starter-toolkit 번들)
+npm install -g @aws/agentcore
 
-# 옵션 2: 전용 프로파일
-aws configure --profile my-agentcore
-export AWS_PROFILE=my-agentcore
+# 또는 Python 직접
+pip install bedrock-agentcore-starter-toolkit
+
+agentcore --help
+```
+
+### 시나리오 순차 실행
+
+`scripts/*.sh`는 모두 환경 변수 `AWS_PROFILE`, `AWS_REGION`, `PATH`를 가정합니다. 실제 환경에 맞게 수정하세요.
+
+```bash
+export AWS_PROFILE=<your-profile>
 export AWS_REGION=us-west-2
+export PATH="$HOME/.local/bin:$PATH"
+
+# 순차 실행 권장
+bash scripts/00-env-check.sh
+bash scripts/01-create-project.sh
+bash scripts/02-dev-local.sh
+bash scripts/03-deploy.sh              # <-- AWS 리소스 생성 시작
+bash scripts/04-invoke-session-isolation.sh
+bash scripts/05-observability.sh
+bash scripts/06-tools-inspect.sh
+bash scripts/99-cleanup.sh             # <-- 반드시 실행 (비용 누수 방지)
 ```
 
-필요한 IAM 권한 (최소):
+각 단계 로그는 `artifacts/NN-*.log`로 저장됩니다.
 
-- `bedrock-agentcore-control:*` (Runtime 생성/삭제)
-- `bedrock-agentcore:InvokeAgentRuntime`
-- `bedrock:InvokeModel` (Claude Sonnet 4.5)
-- `iam:CreateRole`, `PutRolePolicy`, `PassRole`, `GetRole`, `DeleteRole`
-- `s3:PutObject`, `GetObject`, `DeleteObject` (`bedrock-agentcore-codebuild-sources-*` 버킷)
-- `codebuild:*`, `ecr:*` (scaffold 생성만, 빌드 job은 돌지 않음)
-- `logs:*` (CloudWatch 로그 그룹)
+## 핵심 관찰
 
----
+### 1. 실제 프로젝트 구조는 `harness.json`이 아니라 Strands 코드 + YAML 설정
 
-## 실행 방법
+`agentcore create` 결과:
 
-```bash
-git clone https://github.com/jesamkim/bedrock-agentcore-harness-experiment.git
-cd bedrock-agentcore-harness-experiment
-
-pip install -r requirements.txt
-
-# 1. 배포 (configure + launch + poll READY, 약 28초)
-python deploy_agent.py
-
-# 2. Cold vs Warm 레이턴시 측정
-python invoke_session.py
-
-# 3. 툴 호출 검증 (add_numbers, get_current_time)
-python test_tools.py
-
-# 4. 세션 격리 검증 (동시 2세션, 비밀 번호 교차 오염 없는지)
-python test_isolation.py
-
-# 5. Observability 검증 (로그 그룹 + 메트릭 네임스페이스)
-python check_observability.py
-
-# 6. 정리 (런타임 + IAM 롤 + S3 + CodeBuild + ECR 모두 삭제)
-python cleanup.py
+```
+my-project/
+└── HelloAgent/
+    ├── .bedrock_agentcore.yaml  # 프로젝트 설정 (런타임, deployment_type, 실행 role 등)
+    ├── pyproject.toml           # strands-agents, bedrock-agentcore, mcp …
+    └── src/
+        ├── main.py              # Strands Agent + @app.entrypoint
+        ├── model/load.py        # BedrockModel 로더
+        └── mcp_client/client.py # streamablehttp MCP 클라이언트
 ```
 
-각 스크립트는 자신의 결과 JSON을 남기며, 뒤따르는 스크립트는 `deploy-log.json`에서 런타임 ARN을 읽습니다.
+`src/main.py` 핵심:
 
----
+```python
+from strands import Agent, tool
+from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+from bedrock_agentcore.runtime import BedrockAgentCoreApp
 
-## 파일 구성
+app = BedrockAgentCoreApp()
 
-| 파일 | 용도 |
-|------|------|
-| `main.py` | 에이전트 엔트리포인트. `BedrockAgentCoreApp` + Strands `Agent()` + 2개 `@tool`. |
-| `deploy_agent.py` | `bedrock_agentcore_starter_toolkit.Runtime`으로 configure + launch + poll READY. |
-| `invoke_session.py` | 같은 세션에서 2회 invoke로 cold/warm 측정. |
-| `test_tools.py` | 툴 호출을 유도하는 프롬프트로 `add_numbers`/`get_current_time` 검증. |
-| `test_isolation.py` | 스레드 2개로 동시 세션 2개를 돌려 비밀 번호 교차 오염 검사. |
-| `check_observability.py` | `/aws/bedrock-agentcore/runtimes/*` 로그 그룹 + 4개 후보 네임스페이스 메트릭 조회. |
-| `cleanup.py` | 런타임 + IAM 롤 + S3 + CodeBuild 프로젝트 + ECR 레포 + 로그 그룹 일괄 삭제. |
-| `requirements.txt` | `bedrock-agentcore==1.2.0`, `bedrock-agentcore-starter-toolkit==0.2.6`, `strands-agents==1.29.0`. |
-| [`research-findings.md`](./research-findings.md) | Phase 1 문헌 조사 결과 (SDK 구조, API 표면, 프레임워크 중립성). |
-| [`results.md`](./results.md) | Phase 3 실측 결과 상세 리포트 (14 KB). |
-| [`blog-corrections.md`](./blog-corrections.md) | 블로그 12개 정정 항목. |
-| `artifacts/` | 실제 실험 run의 JSON 원본 (account ID redact 완료). |
+@tool
+def add_numbers(a: int, b: int) -> int:
+    return a + b
 
----
+@app.entrypoint
+async def invoke(payload, context):
+    code_interpreter = AgentCoreCodeInterpreter(
+        region=REGION, session_name=context.session_id,
+        auto_create=True, persist_sessions=True,
+    )
+    with mcp_client as client:
+        tools = client.list_tools_sync()
+        agent = Agent(
+            model=load_model(),
+            system_prompt="You are a helpful assistant ...",
+            tools=[code_interpreter.code_interpreter, add_numbers] + tools,
+        )
+        async for event in agent.stream_async(payload.get("prompt")):
+            if "data" in event and isinstance(event["data"], str):
+                yield event["data"]
+```
 
-## Exit Codes
+개념적으로는 여전히 `model + systemPrompt + tools`로 에이전트가 정의되지만, 표현 매체는 JSON이 아니라 Python + Strands.
 
-| 코드 | 의미 |
-|------|------|
-| 0 | 성공 |
-| 2 | `configure()` 실패 |
-| 3 | `launch()` 실패 |
-| 4 | launch 후 ARN/ID 누락 |
-| 5 | 타임아웃 내에 READY 도달 실패 |
-| 6 | invoke 응답이 200이 아님 |
-| 7 | 툴 검증 실패 |
-| 8 | 세션 간 정보 오염 감지 |
-| 9 | observability 단계에서 `deploy-log.json` agent_id 누락 |
-| 10 | cleanup 후에도 런타임 잔존 |
+### 2. 세션 격리 + 관측성 검증
 
----
+| 검증 방식 | 결과 |
+|---|---|
+| Session A에 "코드워드 XRAY-1111 기억해" → Session B에 "코드워드는?" | Session B = `UNKNOWN` (격리됨) |
+| CloudWatch log streams (us-west-2) | 세션마다 `[runtime-logs-session-<id>]` 독립 stream |
+| `AWS/Bedrock-AgentCore` 메트릭 네임스페이스 | `Latency`, `SystemErrors`, `UserErrors`, `Throttles` 실측 확인 |
+| OTel 자동 활성화 | `entryPoint=["opentelemetry-instrument", "main.py"]` 자동 wrap |
 
-## 주요 주의사항
+`agentcore obs list/show` 명령어로 trace를 CLI에서 바로 조회 가능합니다.
 
-- **모델 ID는 날짜 포함 형식 필수**: `us.anthropic.claude-sonnet-4-5-20250929-v1:0` ✅ / `us.anthropic.claude-sonnet-4-5-v1:0` ❌
-- **메모리 모드는 `NO_MEMORY`**: 같은 세션 안에서도 턴 간 컨텍스트 보장 없음. 이 실험은 세션 격리·툴 호출·하네스 구조 검증이지 장기 컨텍스트 테스트가 아닙니다.
-- **test_isolation.py 성공 조건**: 세션 간 정보 교차 오염이 없으면 통과. 에이전트가 "기억 못 한다"고 답해도 통과입니다. 실패 조건은 다른 세션의 비밀 번호를 언급하는 경우뿐.
-- **`direct_code_deploy`는 CodeBuild/ECR 미사용**: 일부 문서/블로그가 암시하는 것과 달리 CodeBuild job은 돌지 않습니다. S3 ZIP → Runtime 직배포 구조이며, 버킷 이름에만 `codebuild-sources`가 남아 있습니다.
-- **CloudWatch 메트릭 네임스페이스**: `AWS/Bedrock-AgentCore`(하이픈)입니다. `AWS/BedrockAgentCore`로 찾으면 안 나옵니다.
+### 3. 프레임워크/IaC/Provider 선택지 (v0.11.0 기준)
 
----
+```
+agentcore create
+  --agent-framework  [Strands|LangChain_LangGraph|GoogleADK|OpenAIAgents|AutoGen|CrewAI]
+  --model-provider   [Bedrock|OpenAI|Anthropic|Gemini]
+  --iac              [CDK|Terraform]
+  --template         [basic|production]
+```
 
-## 정리 (중요)
+## legacy-runtime-experiment (참고용)
 
-배포된 런타임은 **시간당 비용이 발생**합니다. 실험이 끝나면 반드시 `cleanup.py`를 돌려 전체 리소스를 제거하세요. 스크립트는 다음을 삭제합니다.
+이 디렉토리에는 이전 실험(AgentCore Runtime 레이어 + Strands 직접 호출) 코드와 결과가 보존되어 있습니다. 블로그가 다루는 Managed Harness CLI 레이어와는 추상화 수준이 다르므로, **현재 실험과 혼동하지 않도록** 별도 디렉토리로 분리했습니다.
 
-- Agent Runtime (`harness_test_*`)
-- IAM 실행 롤 (`AmazonBedrockAgentCoreSDKRuntime-us-west-2-*`)
-- S3 업로드 prefix (`s3://bedrock-agentcore-codebuild-sources-<acct>-<region>/harness_test_*/`)
-- CodeBuild 프로젝트 (scaffold만, 실제 빌드 기록 없음)
-- ECR 레포지토리 (scaffold만)
-- CloudWatch 로그 그룹
+## 관련 링크
 
-실제 실험 후 검증: Agent Runtime 0개, IAM 롤 0개, S3 prefix 0개, 로그 그룹 0개 — 완전 정리 확인 완료.
+- 블로그: https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/
+- AWS 발표: https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/
+- AgentCore CLI (npm): https://www.npmjs.com/package/@aws/agentcore
+- AgentCore Starter Toolkit (Python): https://github.com/aws/bedrock-agentcore-starter-toolkit
 
----
+## 라이선스
 
-## 참고 자료
-
-- 블로그: [Bedrock AgentCore Managed Harness 심층 해부](https://jesamkim.github.io/ai-tech-blog/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive/)
-- AWS Machine Learning Blog: [Get to your first working agent in minutes](https://aws.amazon.com/blogs/machine-learning/get-to-your-first-working-agent-in-minutes-announcing-new-features-in-amazon-bedrock-agentcore/)
-- [AWS What's New: AgentCore new features](https://aws.amazon.com/about-aws/whats-new/2026/04/agentcore-new-features-to-build-agents-faster/)
-- [AgentCore CLI GitHub](https://github.com/aws/agentcore-cli)
-- [Strands Agents SDK](https://github.com/strands-agents/sdk-python)
-- [AgentCore Developer Guide](https://docs.aws.amazon.com/bedrock-agentcore/latest/devguide/)
-
----
-
-## License
-
-MIT
-
----
-
-*검증일: 2026-04-26 · SDK: bedrock-agentcore 1.2.0, starter-toolkit 0.2.6, strands-agents 1.29.0 · 리전: us-west-2*
+MIT. 실험 코드와 로그는 자유롭게 사용 가능합니다. AWS 계정 ID나 profile 이름은 redact된 상태로 공개되어 있으며, 실제 실행 시에는 본인 환경으로 교체하세요.

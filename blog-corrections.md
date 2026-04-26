@@ -1,213 +1,194 @@
-# 블로그 정정 사항 — AgentCore "Managed Harness" 실전 검증 결과
+# 블로그 수정 제안: `2026-04-26-bedrock-agentcore-managed-harness-deep-dive.md`
 
-대상 블로그: `2026-04-26-bedrock-agentcore-managed-harness-deep-dive.md`
-검증일: 2026-04-26
-검증 환경: AWS 123456789012, us-west-2, bedrock-agentcore-sdk-python 1.2.0, starter-toolkit 0.2.6, strands-agents 1.29.0
-검증 결과물: `results.md`, `deploy-log.json`, `invoke-results.json`, `isolation-results.json`, `observability-results.json`
-
----
-
-## 1. 명칭 — "Managed Harness"는 AWS 공식 용어가 아님
-
-**블로그 주장**: "AgentCore의 Managed Harness가 3-선언만으로 에이전트를 배포한다."
-
-**실제**: AWS 공식 문서/SDK/CLI/What's New 어디에도 "Managed Harness"라는 용어는 없다. 블로그가 만든 비공식 라벨이다.
-
-**정확한 구성 요소** (세 개가 합쳐진 것):
-1. `BedrockAgentCoreApp` — `bedrock_agentcore.runtime.app` 의 Starlette 기반 HTTP 래퍼
-2. 에이전트 프레임워크 (Strands / LangGraph / CrewAI / Autogen / OpenAI Agents / Google ADK 중 택 1)
-3. **AgentCore Runtime** — 관리형 호스팅 서비스 (실제 AWS 제품명)
-
-**정정 제안**: "Managed Harness" → "AgentCore Runtime + `BedrockAgentCoreApp` 래퍼 + (사용자 선택) Strands 에이전트" 로 표기.
+**대상**: `content/posts/2026-04-26-bedrock-agentcore-managed-harness-deep-dive.md`  
+**근거**: `<REPO>/results.md` + `artifacts/*.log`  
+**원칙**: (A) 명확한 팩트 오류만 직접 수정, (B) 새 실측 인사이트는 별도 "실전 실험" 섹션으로 append, (C) 불확실한 것은 건드리지 않음.
 
 ---
 
-## 2. "3-선언 배포" — 레이어가 섞인 설명
+## 수정 대상 #1: Terraform 지원 (Line 113) — 카테고리 **A (팩트 오류)**
 
-**블로그 주장**: "`model`, `systemPrompt`, `tools` 3개 필드만 선언하면 배포된다."
+**원문** (Line 113):
+> `cdk/`는 AWS가 생성한 CDK 스택으로, 실제 리소스 프로비저닝을 여기서 수행합니다. **Terraform 지원은 이어서 제공될 예정이라고 공식 블로그가 예고했습니다.**
 
-**실제**:
-- 그 3개 필드는 **AgentCore의 배포 API가 아니라** `strands.Agent(model=..., system_prompt=..., tools=[...])` 생성자 인자다.
-- AgentCore 실제 배포 API(`create_agent_runtime` 또는 toolkit `Runtime.launch()`)는 추가로 다음이 필요하다:
+**증거**: `agentcore create --iac [CDK|Terraform]` 옵션이 v0.11.0에 이미 존재.
 
-| 필수/사실상 필수 필드 | 이번 실험 실측 값 |
-|---|---|
-| `entrypoint` | `main.py` |
-| `agent_name` | `harness_test_2fe9b30a` |
-| `requirements_file` | `requirements.txt` |
-| `runtime_type` | `PYTHON_3_10` (누락 시 `configure()` 실패) |
-| `auto_create_execution_role` | `True` (자동 IAM 롤 생성) |
-| `memory_mode` | `NO_MEMORY` |
-| S3 아티팩트 업로드 | `bedrock-agentcore-codebuild-sources-...` 버킷에 59 MB zip |
-| IAM 역할 | `AmazonBedrockAgentCoreSDKRuntime-us-west-2-5e82d0bbf1` (자동 생성) |
-| `pythonRuntime`, `entryPoint`, `roleArn`, `agentRuntimeArtifact` | 제어 평면 API 필수 파라미터 |
-
-**정정 제안**: "3-선언"이라는 표현을 유지하려면, 그것이 **Strands Agent 정의**에 국한된 표현임을 명확히 해야 한다. AgentCore 배포 전체 플로우는 `agentcore configure`(13개+ 필드) + `agentcore deploy` 두 단계다.
+**수정안**:
+> `cdk/`는 AWS가 생성한 CDK 스택으로, 실제 리소스 프로비저닝을 여기서 수행합니다. `agentcore create --iac [CDK|Terraform]` 옵션으로 **CDK와 Terraform 중 선택**할 수 있습니다(v0.11.0 기준 양쪽 모두 지원).
 
 ---
 
-## 3. "Firecracker microVM"은 공개된 사실이 아님
+## 수정 대상 #2: 지원 모델 provider 개수 (Line 82) — 카테고리 **A**
 
-**블로그 주장**: "세션마다 Firecracker microVM이 생성된다."
+**원문** (Line 82):
+> 모델 provider는 **Amazon Bedrock, OpenAI, Google Gemini** 세 곳입니다.
 
-**실제**:
-- AWS devguide는 **"microVM" 용어는 공식 사용** ("Each user session in AgentCore Runtime receives its own dedicated microVM with isolated Compute, memory, and filesystem resources").
-- 그러나 **"Firecracker"라는 단어는 AgentCore 공식 문서에 전혀 등장하지 않는다.**
-- 이번 실험에서 수집한 응답 헤더에도 hypervisor 관련 힌트는 없었다:
-  - 보이는 것: `x-amzn-requestid`, `x-amzn-bedrock-agentcore-runtime-session-id`
-  - 보이지 않는 것: VM ID, host ID, hypervisor 종류, 어떤 Firecracker 관련 문자열도 없음
+**증거**: `agentcore create --model-provider [Bedrock|OpenAI|Anthropic|Gemini]` → Anthropic(Bedrock 외 직접 API) 옵션이 CLI에 명시.
 
-**정정 제안**: "Firecracker"를 단정적으로 언급하지 말고 "microVM" 만 사용. "AWS의 경량 가상화 기술 기반 microVM (hypervisor 구체 종류는 공개되지 않음)" 정도가 안전하다.
+**수정안**:
+> 모델 provider는 **Amazon Bedrock, OpenAI, Anthropic(직접 API), Google Gemini** 네 곳입니다. CLI에서는 `agentcore create --model-provider` 플래그로 선택합니다.
 
 ---
 
-## 4. "Strands가 AgentCore의 내부 엔진" — 오해
+## 수정 대상 #3: 지원 프레임워크 — "Strands가 엔진이다" 섹션 (Line 72-78) — 카테고리 **A**
 
-**블로그 주장**: "AgentCore의 내부 엔진은 Strands Agents이다."
+**원문** (Line 72-78):
+> ### Strands Agents가 엔진이다  
+> Managed Harness가 내부에서 돌리는 에이전트 엔진은 AWS 오픈소스 프레임워크인 **Strands Agents**입니다. … 루프 제어, 도구 바인딩, 에러 복구, 스트리밍 출력이 Strands의 ReAct 스타일 루프 위에서 실행됩니다.
 
-**실제**:
-- `bedrock-agentcore-starter-toolkit`의 템플릿 디렉터리 `create/features/` 아래에 `strands/`, `langchain_langgraph/`, `crewai/`, `openaiagents/`, `googleadk/`, `autogen/` 이 모두 1급(first-class) 지원된다.
-- `BedrockAgentCoreApp`은 Starlette HTTP 서버 래퍼 — **프레임워크 중립**이다. `/invocations` POST 핸들러만 구현하면 된다.
-- Strands가 `agentcore create` 의 기본 템플릿이라서 그렇게 보일 뿐, 내부 엔진 개념 자체가 없다.
+**증거**: `agentcore create --agent-framework [Strands|LangChain_LangGraph|GoogleADK|OpenAIAgents|AutoGen|CrewAI]` → Strands는 **기본값**이고 총 6개 프레임워크 선택 가능.
 
-**정정 제안**: "Strands는 AgentCore에서 기본 템플릿으로 제공되는 여러 지원 프레임워크 중 하나"로 표기. "내부 엔진"이라는 말은 삭제.
+**수정안** (섹션 제목 + 첫 단락만 교체):
+> ### Strands Agents가 기본 엔진이다  
+> Managed Harness의 **기본 엔진**은 AWS 오픈소스 프레임워크인 **Strands Agents**입니다. 단, CLI의 `agentcore create --agent-framework` 옵션은 Strands 외에도 **LangChain/LangGraph, Google ADK, OpenAI Agents, AutoGen, CrewAI** 등 총 6개 프레임워크를 지원합니다(v0.11.0 기준). 기본값을 그대로 쓰면 루프 제어, 도구 바인딩, 에러 복구, 스트리밍 출력이 Strands의 ReAct 스타일 루프 위에서 실행됩니다.
 
----
-
-## 5. "프리뷰 기능" — 사실과 다름
-
-**블로그 주장**: "AgentCore는 프리뷰(preview) 기능이라 가입/활성화가 필요하다."
-
-**실제**:
-- **2025-10-13 GA**. AWS 블로그 "Amazon Bedrock AgentCore is now generally available" (2025-10-13) 참조.
-- 별도 enrollment 불필요. 표준 IAM 권한만 있으면 사용 가능.
-- 9개 리전 지원: us-east-1, us-east-2, us-west-2, eu-west-1, eu-central-1, ap-south-1, ap-southeast-1, ap-southeast-2, ap-northeast-1.
-- 서울 리전(ap-northeast-2)은 2026-04 기준 아직 미지원.
-
-**정정 제안**: "프리뷰"를 "GA (2025-10 정식 출시, 현재 9개 리전 지원, 서울 리전 제외)"로 수정.
+나머지 단락(직접 Strands를 사용할 때와의 차이점 논의)은 유지.
 
 ---
 
-## 6. "CodeBuild로 arm64 빌드" — 기본값이 아님
+## 수정 대상 #4: 프로젝트 구조 설명 (Line 99-115) — 카테고리 **A**
 
-**블로그 암시**: "배포 시 CodeBuild가 arm64 컨테이너를 빌드한다."
+**원문** (Line 101-111):
+> ```
+> harnessSample/
+> ├── agentcore/
+> │   ├── agentcore.json     # 프로젝트 전체 스펙
+> │   ├── aws-targets.json   # 배포 계정/리전
+> │   └── cdk/               # CDK 스택
+> └── app/
+>     └── MyHarness/
+>         ├── harness.json       # 하니스 선언
+>         └── system-prompt.md   # 시스템 프롬프트
+> ```
 
-**실제 (이번 실험 실측)**:
-- `deployment_type="direct_code_deploy"`(toolkit 0.2.6 기본값)는 **CodeBuild를 사용하지 않는다.**
-- 대신 클라이언트에서 **`uv`**로 `aarch64-manylinux2014` 타깃 크로스 컴파일 → 59 MB ZIP → S3 업로드.
-- 따라서 `deploy_agent.py` 실행 시 **`uv` 바이너리가 로컬에 설치되어 있어야 한다.** 없으면 `RuntimeError: uv is required for direct_code_deploy deployment but was not found.` 오류 발생.
-- CodeBuild 프로젝트(`bedrock-agentcore-harness_test_2fe9b30a`)는 scaffold로 생성되지만 실제 빌드 job은 돌지 않는다.
-- 이것이 블로그의 "<5분 배포" 주장보다 훨씬 빠른 **27.8초** 배포를 설명한다.
-- 런타임 자체는 여전히 ARM64 Graviton에서 실행된다 — 빌드 방식만 클라이언트-side인 것.
+**증거**: `@aws/agentcore` v0.11.0 실측 생성물은 `harness.json`이나 `agentcore.json` 대신 `HelloAgent/.bedrock_agentcore.yaml` + `HelloAgent/src/main.py` + `HelloAgent/pyproject.toml` 구조.
 
-**정정 제안**:
-- "CodeBuild arm64 빌드" → "로컬 `uv` 크로스 컴파일 (`direct_code_deploy` 모드) 또는 컨테이너 이미지 배포 (`container` 모드) 선택 가능"
-- 배포 시간: "수 분" → "`direct_code_deploy`는 ~30초, 컨테이너 모드는 3~5분"
-
----
-
-## 7. "툴 호출" — 동작은 하지만 SDK 메타데이터 표면화는 불완전
-
-**블로그 주장**: "에이전트가 툴을 호출하고 결과를 깔끔하게 반환한다."
-
-**실제 (이번 실험)**:
-- **서버 측 툴 실행은 정상 동작**: CloudWatch 로그에 `Tool #1: get_current_time`, `Tool #2: add_numbers` 명시적으로 기록됨.
-- 응답 본문에 계산 결과가 포함됨: `17+25=42`, `888+1234=2122`, 실제 UTC 타임스탬프 (`2026-04-26T01:57:58.987633+00:00`).
-- **그러나 Strands 1.29.0의 `AgentResult.tool_uses` 필드는 빈 배열**. SDK 레벨에서 툴 호출 메타데이터를 클라이언트로 surface하는 기능이 제대로 동작하지 않음.
-- 툴 호출 내역을 프로그래매틱하게 확인하려면 지금은 **CloudWatch Logs**에 의존해야 한다.
-
-**정정 제안**: 툴 호출 섹션에 "현재 Strands 1.29에서는 `AgentResult.tool_uses` 메타데이터가 일관되게 채워지지 않는 이슈가 있음. 툴 호출 이력 확인은 CloudWatch 로그를 통해 가능" 주석 추가.
-
----
-
-## 8. 관측성(Observability) 네임스페이스 — 정확한 이름
-
-**블로그 주장**: "CloudWatch에 자동으로 메트릭/로그가 쌓인다."
-
-**실제**: 사실이다. 다만 **네임스페이스 명이 정확하지 않으면 메트릭을 못 찾는다.**
-
-| 네임스페이스 | 존재? | 비고 |
-|---|---|---|
-| `AWS/BedrockAgentCore` | ❌ | 많은 블로그/가이드가 이 이름을 쓰지만 존재하지 않음 |
-| `AWS/Bedrock-AgentCore` | ✅ | **하이픈 포함이 정답** (17개 메트릭) |
-| `AWS/Bedrock/AgentCore` | ❌ | |
-| `bedrock-agentcore` | ❌ | |
-
-**로그 그룹 패턴**: `/aws/bedrock-agentcore/runtimes/<RUNTIME-ID>-DEFAULT`
-**게재 메트릭**: `Latency`, `SystemErrors`, `UserErrors`, `Throttles`, `Sessions`, `Invocations`, `Errors`, `Duration`
-**차원**: `{Resource: <runtime ARN>, Operation: InvokeAgentRuntime, Name: <agent-name>::DEFAULT}`
-
-**정정 제안**: 블로그에 메트릭 네임스페이스를 명시할 때 `AWS/Bedrock-AgentCore` (하이픈 주의)로 표기.
+**수정안** (대체):
+> ```
+> my-project/
+> └── HelloAgent/
+>     ├── .bedrock_agentcore.yaml  # 프로젝트 설정 (agent 이름, region, runtime, deployment_type)
+>     ├── pyproject.toml           # 의존성 (strands, bedrock-agentcore, mcp 등)
+>     ├── src/
+>     │   ├── main.py              # Strands 에이전트 코드 + @entrypoint
+>     │   ├── model/load.py        # 모델 로더 (BedrockModel 인스턴스)
+>     │   └── mcp_client/client.py # MCP gateway 연결
+>     └── test/
+> ```
+> v0.11.0 기준 CLI가 생성하는 기본 구조는 JSON 선언이 아닌 **Python 코드(Strands) + YAML 설정** 조합입니다. ClassMethod 기사의 `harness.json` 형태는 다른 경로(예: 내부 SDK 또는 미공개 분기)일 가능성이 있으며, 공개 `@aws/agentcore` CLI에서는 재현되지 않았습니다.
 
 ---
 
-## 9. VTEX / Rodrigo Moreira 인용구
+## 수정 대상 #5: `harness.json` 예시 블록 (Line 51-68) — 카테고리 **A**
 
-**블로그**: Rodrigo Moreira (VTEX) 발언을 인용.
+**원문** (Line 51-68):
+> [ClassMethod의 분석]에 공개된 `harness.json` 예시는 다음처럼 간결합니다.
+> ```json
+> {
+>   "name": "MyHarness",
+>   "model": {...},
+>   "tools": [...],
+>   "skills": []
+> }
+> ```
+> `tools` 배열에 `agentcore_browser`, `agentcore_gateway`, `remote_mcp_server`를 추가하면 각각 웹 브라우징, 엔터프라이즈 API 연결, 외부 MCP 서버 연결이 붙습니다.
 
-**실제**: 공개 웹에서 **원 출처를 찾지 못함**. AWS GA 발표 블로그, AgentCore 제품 페이지, 접근 가능한 AWS 자료에서 해당 인용구를 확인할 수 없었다.
+**증거**: 공개 CLI에서 harness.json이 생성되지 않음. 도구 바인딩은 Python `tools=[]`리스트로 이뤄짐.
 
-**정정 제안**:
-- (a) 블로그에 인용의 1차 출처 URL (AWS case study, press release 등) 명시 — 있다면
-- (b) 확인 불가 시 해당 인용구 제거 또는 "출처: 내부 자료" 주석
+**수정안**: `harness.json` 예시 블록은 "ClassMethod 기사의 서술이며, 공개 CLI(`@aws/agentcore` v0.11.0)에서는 `main.py` 안의 Strands `Agent(tools=[...])` 호출로 동일 기능을 제공한다"는 단서로 대체.
 
----
-
-## 10. 기타 실측 세부사항 (블로그 강화용)
-
-실험에서 확인된 구체적 수치/사실로, 블로그의 기술 신뢰성을 올리는 데 사용 가능:
-
-| 항목 | 실측 값 |
-|---|---|
-| 배포 시간 (direct_code_deploy) | 27.8초 (configure 0.2초 + launch 27.5초 + poll 0.1초) |
-| Cold invoke latency | 6.57초 (클라이언트 측정, 서버 핸들러 3.55초) |
-| Warm invoke latency | 3.27초 (서버 핸들러 3.17초) |
-| Warm speedup | ~3.3초 |
-| 패키지 크기 | 59.26 MB (dependencies + main.py) |
-| `idleRuntimeSessionTimeout` | 900초 (15분 — idle 세션 자동 종료) |
-| `maxLifetime` | 28,800초 (8시간 — 세션 최대 수명) |
-| `requireMMDSV2` | true (IMDSv2 강제) |
-| `networkMode` | PUBLIC (VPC 구성 가능) |
-| `agentRuntimeVersion` | 자동으로 1부터 시작, 업데이트 시 증가 |
-| `workloadIdentityDetails.workloadIdentityArn` | 각 런타임에 자동 생성 |
-| IAM 역할 네이밍 | `AmazonBedrockAgentCoreSDKRuntime-<region>-<hash>` |
-| IAM eventual consistency | 신규 롤 어시움 실패 시 자동 재시도 (1/4 … 4/4) |
-| 세션 격리 헤더 | `x-amzn-bedrock-agentcore-runtime-session-id` 만 노출 (VM ID 등 내부 식별자 없음) |
-| 세션 어피니티 | session ID 같으면 같은 microVM으로 라우팅 (warm) |
-| 모델 ID (올바른 형식) | `us.anthropic.claude-sonnet-4-5-20250929-v1:0` (**날짜 포함 필수**) |
-
----
-
-## 11. 블로그 수정 우선순위
-
-**반드시 수정 (사실 오류)**:
-1. "프리뷰" → "GA (2025-10-13)"
-2. "Strands가 내부 엔진" → "Strands는 기본 템플릿/지원 프레임워크 중 하나"
-3. "Firecracker" 단정 → "microVM (hypervisor 종류 비공개)"
-4. CodeBuild arm64 빌드 주장 → `direct_code_deploy`는 `uv` 로컬 크로스컴파일
-
-**수정 권장 (오해 소지)**:
-5. "Managed Harness" 용어 사용 시 반드시 "(필자 지칭)" 주석
-6. "3-선언"은 Strands Agent 정의에 한정된 설명임을 명시
-7. 메트릭 네임스페이스 `AWS/Bedrock-AgentCore` (하이픈)
-
-**추가 권장 (신뢰도 강화)**:
-8. Rodrigo Moreira 인용구 출처 명시 or 제거
-9. 배포 시간 실측치(27초) 반영
-10. Strands `tool_uses` 메타데이터 이슈 주석
+구체 교체 제안:
+> [ClassMethod의 분석]은 `harness.json` 기반 선언 예시를 제시합니다. 다만 2026-04-26 기준 공개된 `@aws/agentcore` CLI가 생성하는 실제 구조는 JSON 선언이 아니라 Strands Python 코드 형태입니다:
+>
+> ```python
+> # src/main.py 기본 템플릿 (일부 발췌)
+> from strands import Agent
+> from strands_tools.code_interpreter import AgentCoreCodeInterpreter
+> from bedrock_agentcore.runtime import BedrockAgentCoreApp
+>
+> app = BedrockAgentCoreApp()
+>
+> @app.entrypoint
+> async def invoke(payload, context):
+>     code_interpreter = AgentCoreCodeInterpreter(...)
+>     with mcp_client as client:
+>         tools = client.list_tools_sync()  # MCP 도구 자동 발견
+>         agent = Agent(
+>             model=load_model(),                   # Bedrock 모델
+>             system_prompt="You are a helpful ...",# 시스템 프롬프트
+>             tools=[code_interpreter.code_interpreter, add_numbers] + tools,
+>         )
+> ```
+>
+> 개념적으로는 여전히 `model + systemPrompt + tools` 세 축이 에이전트를 정의합니다. 표현 매체(JSON vs Python)만 다를 뿐 철학은 동일합니다.
 
 ---
 
-## 12. 종합 판정
+## 수정 대상 #6: "수 분 내 배포" 실측 수치 보강 (Line 129) — 카테고리 **B (실전 인사이트)**
 
-| 블로그 핵심 주장 | 판정 | 비고 |
-|---|---|---|
-| 3-선언 배포 | **부분 사실** | Strands 정의는 맞음. AgentCore 배포 표면은 아님. |
-| 세션 격리 (microVM) | **사실** | 행동 관찰로 확인 |
-| Firecracker | **미확인** | 공개 증거 없음 |
-| Strands 내부 엔진 | **거짓** | 프레임워크 agnostic |
-| 프리뷰 기능 | **거짓** | GA |
-| 관측성 내장 | **사실** | 네임스페이스만 정확히 |
-| 툴 호출 동작 | **사실 (행동)** | SDK 메타데이터는 부분 동작 |
+**원문** (Line 129):
+> `agentcore deploy`는 내부적으로 CDK 스택을 합성해 대상 계정에 올립니다. AgentCore Runtime 엔드포인트, IAM 역할, CloudWatch 로그 그룹, 필요하다면 VPC 엔드포인트까지 자동 생성됩니다. 배포 결과로 Runtime ARN이 출력되고, 이 ARN이 API 호출 시 타겟이 됩니다.
 
-**요약**: 블로그의 *기술적 방향성과 주요 주장의 의도*는 대부분 옳으나, **용어/사실 관계 7개 지점**에서 수정이 필요하다. 위 1~8 항목은 블로그에 수정 반영할 것을 권장한다.
+**증거**: `artifacts/03-deploy.log` — **32초** 실측.
+
+**수정안** (단락 끝에 추가):
+> HelloAgent 기본 템플릿 기준 실측 배포 소요는 **약 32초**입니다(`direct_code_deploy` 모드, `linux/amd64`, us-west-2). 컨테이너 배포나 VPC 엔드포인트가 포함되는 production 템플릿은 더 길어질 수 있습니다.
+
+---
+
+## 수정 대상 #7: "실전 실험: @aws/agentcore CLI" 신규 섹션 추가 — 카테고리 **B**
+
+블로그 Line 245 ("마무리: 첫 하니스 올리기") 앞 또는 References 직전에 새 섹션 삽입.
+
+**제안 본문**:
+
+```markdown
+## 실전 실험: `@aws/agentcore` CLI v0.11.0 동작 검증
+
+2026-04-26에 `@aws/agentcore` CLI를 실제 계정(us-west-2)에 올려 주요 동작을 확인했습니다. 배포–호출–정리까지 전체 사이클을 직접 돌려본 결과 중 블로그 내용과 어긋나는 부분과, 실측으로 확인된 수치를 간단히 정리합니다.
+
+**확인된 것**
+- 배포 소요: **32초** (HelloAgent 기본 템플릿, direct_code_deploy 모드)
+- 세션 격리: 서로 다른 sessionId로 보낸 요청이 코드워드를 공유하지 않음(블로그 Line 151-155 주장 재확인). CloudWatch log stream도 세션별로 분리되어 생성됨.
+- 관측성: 메트릭 네임스페이스 `AWS/Bedrock-AgentCore`, 로그 그룹 `/aws/bedrock-agentcore/runtimes/<RUNTIME-ID>-DEFAULT` 패턴 일치. `Latency`, `SystemErrors`, `UserErrors`, `Throttles` 등 8종 메트릭 기본 emit.
+- `agentcore destroy --force`로 Agent Runtime, S3 deployment artifacts, 실행 IAM 역할이 일관되게 정리됨.
+
+**블로그 서술과 실제가 달랐던 부분**
+- `harness.json` 기반 선언 구조는 공개 CLI(`@aws/agentcore` v0.11.0)에서는 생성되지 않습니다. 실제 템플릿은 `.bedrock_agentcore.yaml` + Strands 기반 `src/main.py` 구조입니다.
+- 기본 프레임워크는 Strands이지만, CLI 옵션으로 LangChain/LangGraph, Google ADK, OpenAI Agents, AutoGen, CrewAI도 선택 가능합니다.
+- Terraform IaC는 이미 지원됩니다(`agentcore create --iac [CDK|Terraform]`).
+- 기본 모델은 HelloAgent 템플릿 기준 `global.anthropic.claude-sonnet-4-5-20250929-v1:0`입니다.
+
+검증 스크립트와 로그는 [bedrock-agentcore-harness-experiment](https://github.com/jesamkim/bedrock-agentcore-harness-experiment) 레포에 공개되어 있습니다.
+```
+
+---
+
+## 수정 대상 #8: 기본 모델 ID "Sonnet 4.6" 언급 (Line 47, 82) — 카테고리 **C (불확실)**
+
+**원문** (Line 47):
+> | `model` | 추론을 담당할 LLM | `global.anthropic.claude-sonnet-4-6` |
+> (Line 82): Bedrock에서는 Claude Sonnet 4.6이 기본값이고 Opus 4.6도 선택할 수 있습니다.
+
+**증거**: 이번 실험에서 HelloAgent 기본 템플릿은 `global.anthropic.claude-sonnet-4-5-20250929-v1:0`을 사용. 단, 블로그가 말하는 "기본값"은 `harness.json`의 기본값일 수도, Managed Harness preview 버전의 기본값일 수도 있음.
+
+**수정 여부**: **수정하지 않음 (카테고리 C)**  
+이유: 공개 CLI의 기본 템플릿은 4.5이지만, AWS가 발표한 Managed Harness 문서 어딘가에서 4.6을 명시했다면 블로그 주장이 맞을 수 있음. 양쪽 모두 증거가 1차 확인되지 않은 상태이므로 원문 유지.
+
+단, **주장 #7(신규 섹션)에 "HelloAgent 템플릿 기본은 Sonnet 4.5"로 사실만 명시**하는 것으로 보완.
+
+---
+
+## 수정하지 않을 항목 (카테고리 C - 증거 부족)
+
+- "VTEX 피드백" (Line 221): 블로그가 이미 재확인 어려움을 명시.
+- "microVM hypervisor 종류 미공개" (Line 153): 블로그 원문이 이미 한계를 서술.
+- "프리뷰 4개 리전" (Line 209): 이번 실험은 us-west-2만 검증. 나머지 3개 리전은 확인 안 함.
+- "Skills IDE 플러그인" (Line 139): CLI 검증 범위 밖.
+- "Sonnet 4.6 기본값" (Line 82): 공개 CLI는 4.5이지만 Managed Harness 기본이 실제 4.6일 가능성 남음.
+
+## 반영 후 권장 체크
+
+1. `git diff` 로 변경 범위 확인 — 8개 수정 예상.
+2. Hugo build 테스트: `cd <blog-repo> && hugo --minify` (에러 없어야 함).
+3. `grep -n "harness.json" content/posts/2026-04-26-...md` — 유지된 `harness.json` 언급은 "ClassMethod 기사" 맥락 내에만 남아야 함.
